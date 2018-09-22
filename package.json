@@ -1,6 +1,6 @@
 {
   "name": "node-worker-threads-pool",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "simple worker pool using node's worker_threads api.",
   "main": "index.js",
   "directories": {
@@ -25,5 +25,6 @@
   "bugs": {
     "url": "https://github.com/SUCHMOKUO/node-worker-threads-pool/issues"
   },
-  "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme"
+  "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme",
+  "dependencies": {}
 }

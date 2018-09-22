@@ -1,0 +1,29 @@
+{
+  "name": "node-worker-threads-pool",
+  "version": "1.0.0",
+  "description": "simple worker pool using node's worker_threads api.",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "example": "node --experimental-worker ./example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SUCHMOKUO/node-worker-threads-pool.git"
+  },
+  "keywords": [
+    "nodejs",
+    "worker_threads",
+    "worker",
+    "thread",
+    "pool"
+  ],
+  "author": "mokuo",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/SUCHMOKUO/node-worker-threads-pool/issues"
+  },
+  "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme"
+}

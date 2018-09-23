@@ -1,6 +1,6 @@
 {
   "name": "node-worker-threads-pool",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "simple worker pool using node's worker_threads api.",
   "main": "index.js",
   "directories": {

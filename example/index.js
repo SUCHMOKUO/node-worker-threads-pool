@@ -4,7 +4,7 @@ const path = require('path');
 console.log('Pool init...');
 
 const filePath = path.resolve(__dirname, 'worker.js');
-const pool = new Pool(filePath, 4);
+const pool = new Pool(filePath, 16);
 
 console.log('Done! Start processing!');
 

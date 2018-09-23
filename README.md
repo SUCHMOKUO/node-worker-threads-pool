@@ -50,8 +50,8 @@ parentPort.on('message', param => {
 const Pool = require('node-worker-threads-pool');
 
 const filePath = 'absolute/path/to/your/worker/script';
-const num = 4; // The number of workers in this pool.
-const pool = new Pool(filePath, num);
+const threads = 4; // The number of workers in this pool.
+const pool = new Pool(filePath, threads);
 
 for (let i = 0; i < 20; i++) {
   (async () => {

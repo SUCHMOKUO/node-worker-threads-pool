@@ -1,4 +1,5 @@
 const { Worker } = require('worker_threads');
+const Events = require('events');
 
 /**
  * worker in the pool.
@@ -9,10 +10,10 @@ class PoolWorker extends Worker {
    */
   constructor(pool) {
     super(pool.filePath);
-
+    
     this.pool = pool;
     // working status.
-    this.isFree = true;
+    this.isIdle = true;
     
     // call done method when work finished.
     this.prependListener('message', () => this.done());
@@ -31,15 +32,20 @@ class PoolWorker extends Worker {
    * @param {*} param 
    */
   work(param) {
-    this.isFree = false;
-    this.postMessage(param);
+    this.isIdle = false;
+    return new Promise((resolve, reject) => {
+      this.once('message', resolve);
+      this.once('error', reject);
+      this.postMessage(param);
+    });
   }
 
   /**
    * work finished.
    */
   done() {
-    this.isFree = true;
+    this.isIdle = true;
+    this.pool.queue.emit('worker-idle', this);
   }
 
   /**
@@ -51,13 +57,31 @@ class PoolWorker extends Worker {
   }
 }
 
-/**
- * "waiting" for the next event loop.
- */
-function nextLoop() {
-  return new Promise((resolve, _) => {
-    setTimeout(resolve, 20);
-  });
+class WaitingQueue extends Events {
+  constructor() {
+    super();
+    this._queue = [];
+
+    // when a worker turns idle.
+    this.on('worker-idle', worker => {
+      const callback = this._queue.shift();
+      callback && callback(worker);
+    });
+  }
+
+  /**
+   * add a task to waiting queue.
+   * @param {*} param 
+   */
+  addTask(param) {
+    return new Promise((resolve, reject) => {
+      this._queue.push(worker => {
+        worker.work(param)
+          .then(resolve)
+          .catch(reject);
+      });
+    });
+  }
 }
 
 /**
@@ -88,6 +112,8 @@ module.exports = class Pool {
     this.isDeprecated = false;
     // worker list.
     this.workers = Array.from(new Array(num), _ => new PoolWorker(this));
+    // waiting queue
+    this.queue = new WaitingQueue();
   }
 
   /**
@@ -95,18 +121,16 @@ module.exports = class Pool {
    * @param {*} param 
    */
   async exec(param) {
-    const worker = this.workers.find(worker => worker.isFree);
+    const worker = this.workers.find(worker => worker.isIdle);
     if (!worker) {
-      // pool is busy, "waiting" for the next event loop.
-      await nextLoop();
-      return this.exec(param);
+      // pool is busy, add task to waiting queue
+      // then wait for a idle worker to do it.
+      const result = await this.queue.addTask(param);
+      return result;
     }
-    
-    return new Promise((resolve, reject) => {
-      worker.once('message', resolve);
-      worker.once('error', reject);
-      worker.work(param);
-    });
+
+    const result = await worker.work(param);
+    return result;
   }
 
   /**
@@ -117,7 +141,6 @@ module.exports = class Pool {
     const index = this.workers.indexOf(worker);
     if (index !== -1) {
       this.workers[index] = new PoolWorker(this);
-      // console.log('--------------------- Replaced --------------------');
     }
   }
 

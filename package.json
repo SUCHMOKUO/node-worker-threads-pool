@@ -1,13 +1,15 @@
 {
   "name": "node-worker-threads-pool",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "simple worker pool using node's worker_threads api.",
   "main": "index.js",
   "directories": {
     "example": "example"
   },
   "scripts": {
-    "example": "node --experimental-worker ./example"
+    "static-function": "node --experimental-worker ./example/static-with-function",
+    "static-file": "node --experimental-worker ./example/static-with-worker-file",
+    "dynamic": "node --experimental-worker ./example/dynamic"
   },
   "repository": {
     "type": "git",

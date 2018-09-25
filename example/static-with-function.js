@@ -1,16 +1,22 @@
-const Pool = require('..');
-const path = require('path');
+const { StaticPool } = require('..');
+
+function fib(n) {
+  if (n < 2) {
+    return n;
+  }
+  return fib(n - 1) + fib (n - 2);
+}
 
 console.log('Pool init...');
-
-const filePath = path.resolve(__dirname, 'worker.js');
-const pool = new Pool(filePath, 16);
-
+const pool = new StaticPool({
+  size: 4,
+  task: fib
+});
 console.log('Done! Start processing!');
 
 for (let i = 0; i < 20; i++) {
   (async () => {
-    const num = 41 + Math.trunc(4 * Math.random());
+    const num = 40 + Math.trunc(2 * Math.random());
     const res = await pool.exec(num);
     console.log(`Fibonacci(${num}) result:`, res);
   })();

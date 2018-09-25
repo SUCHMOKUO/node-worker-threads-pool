@@ -12,11 +12,34 @@ Simple worker threads pool using Node's worker_threads module.
 npm install node-worker-threads-pool --save
 ```
 
-## Example
+## API
+
+### `Class: StaticPool`
+Instance of StaticPool is a threads pool with static task provided.
+
+### `new StaticPool(opt)`
+
+- `opt`
+  - `size` `<number>` Number of workers in this pool.
+  - `task` `<string | function>` Static task to do. It can be a absolute path of worker file or a function. **Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
+  - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function. eg. use `workerData[property]` in task function to access the data you passed.
+
+### `staticPool.exec(param)`
+
+- `param` - The param your worker script  or task function need.
+- Returns: `<Promise>`
+
+Choose one idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
+
+### `staticPool.destroy()`
+
+Call `worker.terminate()` for every worker in the pool and release them.
+
+### Example (with worker file)
 
 ### Run the example
 ```
-npm run example
+npm run static-file
 ```
 
 ### In the worker.js :
@@ -47,11 +70,14 @@ parentPort.on('message', param => {
 
 ### In the main.js :
 ```js
-const Pool = require('node-worker-threads-pool');
+const { StaticPool } = require('node-worker-threads-pool');
 
 const filePath = 'absolute/path/to/your/worker/script';
-const threads = 4; // The number of workers in this pool.
-const pool = new Pool(filePath, threads);
+
+const pool = new StaticPool({
+  size: 4,
+  task: filePath
+});
 
 for (let i = 0; i < 20; i++) {
   (async () => {
@@ -67,23 +93,106 @@ for (let i = 0; i < 20; i++) {
 }
 ```
 
-## API
+### Example (with task function)
 
-### `new Pool(filePath, num)`
+### Run the example
+```
+npm run static-function
+```
 
-- `filePath` - The absolute path of your worker.js file.
-- `num` - The number of the workers in your pool.
+### In the main.js :
+```js
+const { StaticPool } = require('node-worker-threads-pool');
 
-### `pool.exec(data)`
+const pool = new StaticPool({
+  size: 4,
+  task: function fib(n) {
+    const num = workerData.num;
+    for (let i = 0; i < num; i++) {
+      n += i;
+    }
+    return n;
+  },
+  workerData: {
+    num: 1 << 30
+  }
+});
 
-- `data` - The data your worker script need.
+for (let i = 0; i < 20; i++) {
+  (async () => {
+    const res = await pool.exec(i);
+    console.log(`result${i}:`, res);
+  })();
+}
+```
+
+### `Class: DynamicPool`
+Instance of DynamicPool is a threads pool executes dynamic task function provided every call.
+
+### `new DynamicPool(size)`
+
+- `size` `<number>` Number of workers in this pool.
+
+### `dynamicPool.exec(opt)`
+
+- `opt`
+  - `task` `<function>` Function as a task to do. **Notice: You can not use closure in task function! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
+  - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function. eg. use `workerData[property]` in task function to access the data you passed.
 - Returns: `<Promise>`
 
-Choose one idle worker in the pool to execute your heavy task with the data you provided. The Promise is resolved with the result your worker generated.
+Choose one idle worker in the pool to execute your task function. The Promise is resolved with the result your task returned.
 
-### `pool.destroy()`
+### `dynamicPool.destroy()`
 
 Call `worker.terminate()` for every worker in the pool and release them.
+
+### Example
+
+### Run the example
+```
+npm run dynamic
+```
+
+### In the main.js :
+```js
+const { DynamicPool } = require('node-worker-threads-pool');
+
+const pool = new DynamicPool(4);
+
+function task1() {
+  // something heavy.
+}
+
+function task2() {
+  // something heavy too.
+}
+
+// execute task1
+(async () => {
+
+  const res = await pool.exec({
+    task: task1,
+    workerData: {
+      ... // some data
+    }
+  });
+  console.log(res);
+
+})();
+
+// execute task2
+(async () => {
+
+  const res = await pool.exec({
+    task: task2,
+    workerData: {
+      ... // some data
+    }
+  });
+  console.log(res);
+  
+})();
+```
 
 ## License
 

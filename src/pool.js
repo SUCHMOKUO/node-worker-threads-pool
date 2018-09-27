@@ -61,6 +61,7 @@ module.exports = class Pool {
   _replace(worker) {
     const i = this.workers.indexOf(worker);
     if (i !== -1) {
+      worker.terminate();
       this.workers[i] = this.newWorker();
     }
   }

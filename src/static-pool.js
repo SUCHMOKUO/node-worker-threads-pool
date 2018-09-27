@@ -43,7 +43,15 @@ module.exports = class StaticPool extends Pool {
     }
   }
 
+  /**
+   * choose a idle worker to run the task
+   * with param provided.
+   * @param { * } param 
+   */
   exec(param) {
+    if (typeof param === 'function') {
+      throw new Error('"param" can not be a function!');
+    }
     return this.runTask(param);
   }
 }

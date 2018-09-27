@@ -1,10 +1,16 @@
 # node-worker-threads-pool
 
+[![](https://img.shields.io/npm/v/node-worker-threads-pool.svg)](https://www.npmjs.com/package/node-worker-threads-pool)
+![](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
+![](https://img.shields.io/npm/dt/node-worker-threads-pool.svg)
+![](https://img.shields.io/npm/l/node-worker-threads-pool.svg)
+
+
 Simple worker threads pool using Node's worker_threads module.
 
 ## Notification
 1. This module can only run in Node.js.
-2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed only if the --experimental-worker flag is added.
+2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed only if the `--experimental-worker` flag is added.
 
 ## Installation
 
@@ -14,7 +20,7 @@ npm install node-worker-threads-pool --save
 
 ## API
 
-### `Class: StaticPool`
+## `Class: StaticPool`
 Instance of StaticPool is a threads pool with static task provided.
 
 ### `new StaticPool(opt)`
@@ -106,7 +112,7 @@ const { StaticPool } = require('node-worker-threads-pool');
 
 const pool = new StaticPool({
   size: 4,
-  task: function fib(n) {
+  task: function(n) {
     const num = workerData.num;
     for (let i = 0; i < num; i++) {
       n += i;
@@ -126,7 +132,7 @@ for (let i = 0; i < 20; i++) {
 }
 ```
 
-### `Class: DynamicPool`
+## `Class: DynamicPool`
 Instance of DynamicPool is a threads pool executes dynamic task function provided every call.
 
 ### `new DynamicPool(size)`

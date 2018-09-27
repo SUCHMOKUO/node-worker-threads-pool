@@ -23,7 +23,7 @@
     "pool"
   ],
   "author": "mokuo",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/SUCHMOKUO/node-worker-threads-pool/issues"
   },

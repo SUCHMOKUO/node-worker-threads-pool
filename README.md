@@ -10,7 +10,7 @@ Simple worker threads pool using Node's worker_threads module.
 
 ## Notification
 1. This module can only run in Node.js.
-2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed only if the `--experimental-worker` flag is added.
+2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed ~~only if the `--experimental-worker` flag is added.~~, if node.js version is above 11.7.0, worker api is exposed by default.
 
 ## Installation
 

@@ -1,17 +1,30 @@
 const Pool = require('./pool');
 const PoolWorker = require('./pool-worker');
 
+const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
- * @param { Function } fn 
+ * @param { Function } fn
  */
 function createScript(fn) {
+  const strFn = fn.toString();
+  let expression = "";
+  if (fnReg.test(strFn)) {
+    // es6 style in-object function.
+    expression = "function " + strFn;
+  } else {
+    // es5 function or arrow function.
+    expression = strFn;
+  }
   return `
     const { parentPort, workerData } = require('worker_threads');
 
-    const fn = ${ fn.toString() };
+    const container = {
+      workerData,
+      task: (${ expression })
+    };
     
-    parentPort.on('message', param => {
-      parentPort.postMessage(fn(param));
+    parentPort.on('message', (param) => {
+      parentPort.postMessage(container.task(param));
     });
   `;
 }

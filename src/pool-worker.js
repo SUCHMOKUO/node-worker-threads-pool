@@ -9,14 +9,14 @@ module.exports = class PoolWorker extends Worker {
    */
   constructor(pool, ...args) {
     super(...args);
-    
+
     this.pool = pool;
     // working status.
     this.isIdle = true;
     
     // call done method when work finished.
     this.prependListener('message', () => this.done());
-    this.once('exit', code => {
+    this.once('exit', (code) => {
       if (this.pool.isDeprecated || code === 0) {
         // exit normally, do nothing.
         return;
@@ -24,6 +24,8 @@ module.exports = class PoolWorker extends Worker {
       // exit with exception.
       this.handleException();
     });
+
+    this.setMaxListeners(0);
   }
 
   /**

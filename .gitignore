@@ -1,1 +1,4 @@
 .vscode
+test/
+!.gitignore
+!.npmignore

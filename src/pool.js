@@ -23,7 +23,7 @@ module.exports = class Pool {
     // init worker list.
     this.workers = new Array(size).fill();
     // worker generator function.
-    this.newWorker = null;
+    this.createWorker = null;
     // waiting queue
     this.queue = new WaitingQueue();
   }
@@ -33,7 +33,7 @@ module.exports = class Pool {
    * @param { Function } fn worker generator function
    */
   fill(fn) {
-    this.newWorker = fn;
+    this.createWorker = fn;
     this.workers = this.workers.map(fn);
   }
 
@@ -62,7 +62,7 @@ module.exports = class Pool {
     const i = this.workers.indexOf(worker);
     if (i !== -1) {
       worker.terminate();
-      this.workers[i] = this.newWorker();
+      this.workers[i] = this.createWorker();
     }
   }
 

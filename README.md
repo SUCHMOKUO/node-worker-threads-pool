@@ -113,7 +113,7 @@ const { StaticPool } = require('node-worker-threads-pool');
 const pool = new StaticPool({
   size: 4,
   task: function(n) {
-    const num = workerData.num;
+    const num = this.workerData.num;
     for (let i = 0; i < num; i++) {
       n += i;
     }

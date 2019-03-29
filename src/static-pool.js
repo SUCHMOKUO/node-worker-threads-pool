@@ -53,6 +53,8 @@ module.exports = class StaticPool extends Pool {
         this.fill(() => new PoolWorker(this, script, { eval: true, workerData }));
         break;
       }
+
+      default: throw new Error("Invalid type of 'task'!")
     }
   }
 

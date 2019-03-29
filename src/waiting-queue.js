@@ -7,17 +7,19 @@ module.exports = class WaitingQueue extends Events {
     this._queue = [];
 
     // when a worker turns idle.
-    this.on('worker-idle', (worker) => {
-      const callback = this._queue.shift();
-      callback && callback(worker);
+    this.on("worker-idle", (worker) => {
+      const taskFn = this._queue.shift();
+      if (taskFn) {
+        taskFn(worker);
+      }
     });
   }
 
   /**
    * add a task to waiting queue.
-   * @param {*} param 
+   * @param { * } param 
    */
-  addTask(param) {
+  runTask(param) {
     return new Promise((resolve, reject) => {
       this._queue.push((worker) => {
         worker.work(param)

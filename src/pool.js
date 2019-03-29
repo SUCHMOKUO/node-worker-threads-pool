@@ -42,11 +42,14 @@ module.exports = class Pool {
    * @param { * } task 
    */
   async runTask(task) {
-    const worker = this.workers.find(worker => worker.isIdle);
+    if (this.isDeprecated) {
+      throw new Error("This pool is deprecated! Please use a new one.");
+    }
+    const worker = this.workers.find((worker) => worker.isIdle);
     if (!worker) {
       // pool is busy, add task to waiting queue
       // then wait for a idle worker to do it.
-      const result = await this.queue.addTask(task);
+      const result = await this.queue.runTask(task);
       return result;
     }
 
@@ -58,11 +61,13 @@ module.exports = class Pool {
    * replace a broken worker with a new one.
    * @param { PoolWorker } worker 
    */
-  _replace(worker) {
+  replace(worker) {
     const i = this.workers.indexOf(worker);
     if (i !== -1) {
       worker.terminate();
-      this.workers[i] = this.createWorker();
+      const newWorker = this.createWorker();
+      this.workers[i] = newWorker;
+      newWorker.ready();
     }
   }
 
@@ -71,7 +76,7 @@ module.exports = class Pool {
    */
   destroy() {
     this.isDeprecated = true;
-    this.workers.forEach(worker => worker.terminate());
+    this.workers.forEach((worker) => worker.terminate());
     this.workers = null;
   }
 }

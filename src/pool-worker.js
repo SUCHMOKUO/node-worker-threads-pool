@@ -14,9 +14,8 @@ module.exports = class PoolWorker extends Worker {
     // working status.
     this.isIdle = true;
     
-    // call done method when work finished.
-    this.prependListener('message', () => this.done());
-    this.once('exit', (code) => {
+    this.once("exit", (code) => {
+      // console.debug("exit with code", code);
       if (this.pool.isDeprecated || code === 0) {
         // exit normally, do nothing.
         return;
@@ -25,28 +24,41 @@ module.exports = class PoolWorker extends Worker {
       this.handleException();
     });
 
-    this.setMaxListeners(0);
+    // this.setMaxListeners(0);
   }
 
   /**
    * start working.
-   * @param {*} param 
+   * @param { * } param 
    */
   work(param) {
     this.isIdle = false;
     return new Promise((resolve, reject) => {
-      this.once('message', resolve);
-      this.once('error', reject);
+      const self = this;
+
+      function message(res) {
+        self.removeListener("error", error);
+        self.ready();
+        resolve(res);
+      }
+
+      function error(err) {
+        self.removeListener("message", message);
+        reject(err);
+      }
+
+      this.once("message", message);
+      this.once("error", error);
       this.postMessage(param);
     });
   }
 
   /**
-   * work finished.
+   * ready to work.
    */
-  done() {
+  ready() {
     this.isIdle = true;
-    this.pool.queue.emit('worker-idle', this);
+    this.pool.queue.emit("worker-idle", this);
   }
 
   /**
@@ -54,6 +66,7 @@ module.exports = class PoolWorker extends Worker {
    * broken worker with a new one.
    */
   handleException() {
-    this.pool._replace(this);
+    this.removeAllListeners();
+    this.pool.replace(this);
   }
 }

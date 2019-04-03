@@ -1,5 +1,6 @@
 # node-worker-threads-pool
 
+[![Build Status](https://travis-ci.org/SUCHMOKUO/node-worker-threads-pool.png?branch=master)](https://travis-ci.org/SUCHMOKUO/node-worker-threads-pool)
 [![](https://img.shields.io/npm/v/node-worker-threads-pool.svg)](https://www.npmjs.com/package/node-worker-threads-pool)
 ![](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 ![](https://img.shields.io/npm/dt/node-worker-threads-pool.svg)

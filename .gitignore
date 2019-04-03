@@ -1,4 +1,5 @@
-.vscode
-test/
+.vscode/
 !.gitignore
 !.npmignore
+!.travis.yml
+node_modules/

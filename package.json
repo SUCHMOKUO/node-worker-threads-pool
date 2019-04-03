@@ -1,6 +1,6 @@
 {
   "name": "node-worker-threads-pool",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "simple worker pool using node's worker_threads api.",
   "main": "index.js",
   "directories": {
@@ -9,7 +9,8 @@
   "scripts": {
     "static-function": "node --experimental-worker ./example/static-with-function",
     "static-file": "node --experimental-worker ./example/static-with-worker-file",
-    "dynamic": "node --experimental-worker ./example/dynamic"
+    "dynamic": "node --experimental-worker ./example/dynamic",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -28,5 +29,8 @@
     "url": "https://github.com/SUCHMOKUO/node-worker-threads-pool/issues"
   },
   "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme",
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^24.6.0"
+  }
 }

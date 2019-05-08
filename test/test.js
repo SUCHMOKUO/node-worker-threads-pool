@@ -146,4 +146,6 @@ test("test worker file function", async () => {
   const execArr = paramArr.map((n) => pool.exec(n));
   const resArr = await Promise.all(execArr);
   expect(resArr).toEqual(expectResArr);
+
+  pool.destroy();
 });

@@ -1,5 +1,6 @@
-const { DynamicPool, StaticPool } = require(".");
+const { DynamicPool, StaticPool } = require("..");
 const os = require("os");
+const path = require("path");
 const numCPU = os.cpus().length;
 
 test('static pool test 1', async () => {
@@ -129,4 +130,20 @@ test("dynamic pool test 1", async () => {
   expect(resArr).toEqual([40, 10, 200, 2]);
 
   pool.destroy();
+});
+
+test("test worker file function", async () => {
+  const workerData = 100;
+
+  const pool = new StaticPool({
+    task: path.resolve(__dirname, "add.js"),
+    size: numCPU,
+    workerData
+  });
+
+  const paramArr = [0, 11, 12, 13, 14];
+  const expectResArr = paramArr.map((n) => n + workerData);
+  const execArr = paramArr.map((n) => pool.exec(n));
+  const resArr = await Promise.all(execArr);
+  expect(resArr).toEqual(expectResArr);
 });

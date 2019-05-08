@@ -51,7 +51,8 @@ npm run static-file
 
 ### In the worker.js :
 ```js
-const { parentPort } = require('worker_threads');
+// Access the workerData by requiring it.
+const { parentPort, workerData } = require('worker_threads');
 
 // Something you shouldn't run in main thread
 // since it will block the main thread.
@@ -69,6 +70,9 @@ parentPort.on('message', param => {
     throw new Error('param must be a number.');
   }
   const result = fib(param);
+
+  // Access the workerData.
+  console.log("workerData is", workerData);
 
   // return the result to main thread.
   parentPort.postMessage(result);

@@ -44,13 +44,13 @@ module.exports = class StaticPool extends Pool {
     switch (typeof task) {
       case 'string': {
         // task is the path of worker script.
-        this.fill(() => new PoolWorker(this, task, { workerData }));
+        this.fill(() => new PoolWorker(task, { workerData }));
         break;
       }
 
       case 'function': {
         const script = createScript(task);
-        this.fill(() => new PoolWorker(this, script, { eval: true, workerData }));
+        this.fill(() => new PoolWorker(script, { eval: true, workerData }));
         break;
       }
 

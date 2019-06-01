@@ -19,7 +19,7 @@ const script = `
 module.exports = class DynamicPool extends Pool {
   constructor(size) {
     super(size);
-    this.fill(() => new PoolWorker(this, script, { eval: true }));
+    this.fill(() => new PoolWorker(script, { eval: true }));
   }
 
   /**

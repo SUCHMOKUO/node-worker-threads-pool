@@ -23,18 +23,52 @@ module.exports = class Pool {
     // init worker list.
     this.workers = new Array(size).fill();
     // worker generator function.
-    this.createWorker = null;
+    this._createWorker = null;
     // waiting queue
     this.queue = new WaitingQueue();
   }
 
   /**
-   * fill worker list with given function.
-   * @param { Function } fn worker generator function
+   * add life cycle hooks to worker.
+   * @param { PoolWorker } worker 
    */
-  fill(fn) {
-    this.createWorker = fn;
-    this.workers = this.workers.map(fn);
+  _addWorkerHooks(worker) {
+    worker.on("idle", (worker) => {
+      this.queue.emit("worker-idle", worker);
+    });
+
+    worker.once("exit", (code) => {
+      if (this.isDeprecated || code == 0) {
+        // exit normally.
+        return;
+      }
+      // error happened.
+      this.replace(worker);
+      // clear.
+      worker.terminate();
+      worker.removeAllListeners();
+    });
+  }
+
+  /**
+   * set worker generator function.
+   * @param { Function } workerGen worker generator function.
+   */
+  _setWorkerGen(fn) {
+    this._createWorker = () => {
+      const worker = fn();
+      this._addWorkerHooks(worker);
+      return worker;
+    }
+  }
+
+  /**
+   * fill worker list with given function.
+   * @param { Function } workerGen worker generator function.
+   */
+  fill(workerGen) {
+    this._setWorkerGen(workerGen);
+    this.workers = this.workers.map(() => this._createWorker());
   }
 
   /**
@@ -64,8 +98,7 @@ module.exports = class Pool {
   replace(worker) {
     const i = this.workers.indexOf(worker);
     if (i !== -1) {
-      worker.terminate();
-      const newWorker = this.createWorker();
+      const newWorker = this._createWorker();
       this.workers[i] = newWorker;
       newWorker.ready();
     }

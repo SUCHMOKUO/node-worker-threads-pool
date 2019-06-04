@@ -39,14 +39,14 @@ module.exports = class DynamicPool extends Pool {
   }
 }
 
-const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
+const es6FuncReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
  * @param { Function } fn
  */
 function createCode(fn) {
   const strFn = fn.toString();
   let expression = "";
-  if (fnReg.test(strFn)) {
+  if (es6FuncReg.test(strFn)) {
     // es6 style in-object function.
     expression = "function " + strFn;
   } else {

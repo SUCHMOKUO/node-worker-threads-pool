@@ -43,6 +43,7 @@ module.exports = class Pool {
         return;
       }
       // error happened.
+      // console.log("worker exit.");
       this.replace(worker);
       // clear.
       worker.terminate();

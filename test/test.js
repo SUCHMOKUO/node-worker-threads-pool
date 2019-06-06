@@ -149,3 +149,28 @@ test("test worker file function", async () => {
 
   pool.destroy();
 });
+
+test("error test", async () => {
+  const pool = new StaticPool({
+    task: (n) => {
+      if (n < 0) {
+        throw new Error("error test");
+      }
+      return n + 1;
+    },
+    size: numCPU
+  });
+
+  for (let i = 0; i < numCPU; i++) {
+    pool.exec(-1).catch((err) => {
+      console.log(i, err.message);
+    });
+  }
+
+  for (let i = 0; i < numCPU; i++) {
+    const res = await pool.exec(i);
+    expect(res).toBe(i + 1);
+  }
+
+  pool.destroy();
+});

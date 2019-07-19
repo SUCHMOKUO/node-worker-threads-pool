@@ -31,6 +31,6 @@
   "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme",
   "dependencies": {},
   "devDependencies": {
-    "jest": "^24.6.0"
+    "jest": "^24.8.0"
   }
 }

@@ -41,31 +41,6 @@ test('static pool test 2', async () => {
   pool.destroy();
 });
 
-test('static pool test 3', async () => {
-  const pool = new StaticPool({
-    size: numCPU,
-    workerData: 10,
-    task: (n) => {
-      // this.wokerData will be undefined.
-      if (!this.workerData) {
-        throw new ReferenceError("this.workerData is undefined.");
-      }
-      return this.workerData * n;
-    }
-  });
-
-  let res = null;
-  try {
-    res = await pool.exec(10);
-  } catch (err) {
-    expect(err.message).toMatch(/undefined/);
-  }
-
-  expect(res).toBeNull();
-
-  pool.destroy();
-});
-
 test('static pool test 4', async () => {
   const pool = new StaticPool({
     size: numCPU,
@@ -172,5 +147,68 @@ test("error test", async () => {
     expect(res).toBe(i + 1);
   }
 
+  pool.destroy();
+});
+
+test("test no param with static pool", async () => {
+  const pool = new StaticPool({
+    task: (param) => param,
+    size: numCPU
+  });
+
+  expect(await pool.exec()).toBe(undefined);
+
+  pool.destroy();
+});
+
+test("test 'this' in dynamic pool", async () => {
+  const pool = new DynamicPool(numCPU);
+  const data = 10;
+
+  let res = await pool.exec({
+    workerData: data,
+    task() {
+      return this.workerData;
+    }
+  });
+
+  expect(res).toBe(data);
+
+  res = await pool.exec({
+    workerData: data,
+    task: () => {
+      return this.workerData;
+    }
+  });
+
+  expect(res).toBe(data);
+
+  pool.destroy();
+});
+
+test("test 'this' in static pool", async () => {
+  const data = 10;
+  let pool, res;
+
+  pool = new StaticPool({
+    size: numCPU,
+    workerData: data,
+    task() {
+      return this.workerData;
+    }
+  });
+  res = await pool.exec();
+  expect(res).toBe(data);
+  pool.destroy();
+
+  pool = new StaticPool({
+    size: numCPU,
+    workerData: data,
+    task: () => {
+      return this.workerData;
+    }
+  });
+  res = await pool.exec();
+  expect(res).toBe(data);
   pool.destroy();
 });

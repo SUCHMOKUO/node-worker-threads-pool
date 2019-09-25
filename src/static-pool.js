@@ -18,13 +18,11 @@ function createScript(fn) {
   return `
     const { parentPort, workerData } = require('worker_threads');
 
-    const container = {
-      workerData,
-      task: (${ expression })
-    };
+    this.workerData = workerData;
+    const task = (${ expression });
     
     parentPort.on('message', (param) => {
-      parentPort.postMessage(container.task(param));
+      parentPort.postMessage(task(param));
     });
   `;
 }

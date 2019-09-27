@@ -6,8 +6,8 @@ module.exports = class WaitingQueue extends Events {
 
     this._queue = [];
 
-    // when a worker turns idle.
-    this.on("worker-idle", (worker) => {
+    // when a worker turns ready.
+    this.on("worker-ready", (worker) => {
       const taskFn = this._queue.shift();
       if (taskFn) {
         taskFn(worker);

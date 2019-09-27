@@ -33,8 +33,8 @@ module.exports = class Pool {
    * @param { PoolWorker } worker 
    */
   _addWorkerHooks(worker) {
-    worker.on("idle", (worker) => {
-      this.queue.emit("worker-idle", worker);
+    worker.on("ready", (worker) => {
+      this.queue.emit("worker-ready", worker);
     });
 
     worker.once("exit", (code) => {
@@ -80,7 +80,7 @@ module.exports = class Pool {
     if (this.isDeprecated) {
       throw new Error("This pool is deprecated! Please use a new one.");
     }
-    const worker = this.workers.find((worker) => worker.isIdle);
+    const worker = this.workers.find((worker) => worker.isReady);
     if (!worker) {
       // pool is busy, add task to waiting queue
       // then wait for a idle worker to do it.
@@ -98,10 +98,8 @@ module.exports = class Pool {
    */
   replace(worker) {
     const i = this.workers.indexOf(worker);
-    if (i !== -1) {
-      const newWorker = this._createWorker();
-      this.workers[i] = newWorker;
-      newWorker.ready();
+    if (i > 0) {
+      this.workers[i] = this._createWorker();
     }
   }
 

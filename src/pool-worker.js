@@ -9,7 +9,11 @@ module.exports = class PoolWorker extends Worker {
     super(...args);
 
     // working status.
-    this.isIdle = true;
+    this.isReady = false;
+
+    this.once("online", () => {
+      this.ready();
+    });
   }
 
   /**
@@ -17,7 +21,7 @@ module.exports = class PoolWorker extends Worker {
    * @param { * } param 
    */
   work(param) {
-    this.isIdle = false;
+    this.isReady = false;
     return new Promise((resolve, reject) => {
       const self = this;
 
@@ -42,7 +46,7 @@ module.exports = class PoolWorker extends Worker {
    * ready to work.
    */
   ready() {
-    this.isIdle = true;
-    this.emit("idle", this);
+    this.isReady = true;
+    this.emit("ready", this);
   }
 }

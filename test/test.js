@@ -212,3 +212,30 @@ test("test 'this' in static pool", async () => {
   expect(res).toBe(data);
   pool.destroy();
 });
+
+test("test 'this' reference under strict mode", async () => {
+  function task() {
+    "use strict";
+    return this.workerData;
+  }
+
+  let pool;
+  pool = new StaticPool({
+    size: numCPU,
+    task,
+    workerData: 10
+  });
+
+  expect(await pool.exec()).toBe(10);
+
+  pool.destroy();
+
+  pool = new DynamicPool(numCPU);
+  const res = await pool.exec({
+    task,
+    workerData: 10
+  });
+  expect(res).toBe(10);
+
+  pool.destroy();
+});

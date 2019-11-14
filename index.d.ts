@@ -28,7 +28,7 @@ declare class StaticPool {
   /**
    * destroy this pool and terminate all threads.
    */
-  destroy();
+  destroy(): void;
 }
 
 declare namespace DynamicPool {
@@ -60,7 +60,7 @@ declare class DynamicPool {
   /**
    * destroy this pool and terminate all threads.
    */
-  destroy();
+  destroy(): void;
 }
 
 export { 

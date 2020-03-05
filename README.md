@@ -34,8 +34,8 @@ Instance of StaticPool is a threads pool with static task provided.
 
 ### `staticPool.exec(param[, timeout])`
 
-- `param` The param your worker script or task function need.
-- `timeout` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
+- `param` `<any>` The param your worker script or task function need.
+- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
 - Returns: `<Promise>`
 
 Choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
@@ -158,7 +158,7 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 - `opt`
   - `task` `<function>` Function as a task to do. **Notice: You can not use closure in task function! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
-  - `timeout` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
+  - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
 - Returns: `<Promise>`
 
 Choose one idle worker in the pool to execute your task function. The Promise is resolved with the result your task returned.

@@ -6,10 +6,10 @@
 ![](https://img.shields.io/npm/dt/node-worker-threads-pool.svg)
 ![](https://img.shields.io/npm/l/node-worker-threads-pool.svg)
 
-
 Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await.
 
 ## Notification
+
 1. This module can only run in Node.js.
 2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed ~~only if the `--experimental-worker` flag is added.~~, if node.js version is above 11.7.0, worker api is exposed by default.
 
@@ -22,6 +22,7 @@ npm install node-worker-threads-pool --save
 ## API
 
 ## `Class: StaticPool`
+
 Instance of StaticPool is a threads pool with static task provided.
 
 ### `new StaticPool(opt)`
@@ -31,9 +32,10 @@ Instance of StaticPool is a threads pool with static task provided.
   - `task` `<string | function>` Static task to do. It can be a absolute path of worker file or a function. **Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
 
-### `staticPool.exec(param)`
+### `staticPool.exec(param[, timeout])`
 
-- `param` - The param your worker script  or task function need.
+- `param` The param your worker script or task function need.
+- `timeout` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
 - Returns: `<Promise>`
 
 Choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
@@ -45,11 +47,13 @@ Call `worker.terminate()` for every worker in the pool and release them.
 ### Example (with worker file)
 
 ### Run the example
+
 ```
 npm run static-file
 ```
 
 ### In the worker.js :
+
 ```js
 // Access the workerData by requiring it.
 const { parentPort, workerData } = require("worker_threads");
@@ -60,7 +64,7 @@ function fib(n) {
   if (n < 2) {
     return n;
   }
-  return fib(n - 1) + fib (n - 2);
+  return fib(n - 1) + fib(n - 2);
 }
 
 // Main thread will pass the data you need
@@ -80,6 +84,7 @@ parentPort.on("message", (param) => {
 ```
 
 ### In the main.js :
+
 ```js
 const { StaticPool } = require("node-worker-threads-pool");
 
@@ -88,7 +93,7 @@ const filePath = "absolute/path/to/your/worker/script";
 const pool = new StaticPool({
   size: 4,
   task: filePath,
-  workerData: "workerData!"
+  workerData: "workerData!",
 });
 
 for (let i = 0; i < 20; i++) {
@@ -99,7 +104,7 @@ for (let i = 0; i < 20; i++) {
     // to execute your heavy task without blocking
     // the main thread!
     const res = await pool.exec(num);
-    
+
     console.log(`Fibonacci(${num}) result:`, res);
   })();
 }
@@ -108,11 +113,13 @@ for (let i = 0; i < 20; i++) {
 ### Example (with task function)
 
 ### Run the example
+
 ```
 npm run static-function
 ```
 
 ### In the main.js :
+
 ```js
 const { StaticPool } = require("node-worker-threads-pool");
 
@@ -126,8 +133,8 @@ const pool = new StaticPool({
     return n;
   },
   workerData: {
-    num: 1 << 30
-  }
+    num: 1 << 30,
+  },
 });
 
 for (let i = 0; i < 20; i++) {
@@ -139,6 +146,7 @@ for (let i = 0; i < 20; i++) {
 ```
 
 ## `Class: DynamicPool`
+
 Instance of DynamicPool is a threads pool executes different task functions provided every call.
 
 ### `new DynamicPool(size)`
@@ -150,6 +158,7 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 - `opt`
   - `task` `<function>` Function as a task to do. **Notice: You can not use closure in task function! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
+  - `timeout` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
 - Returns: `<Promise>`
 
 Choose one idle worker in the pool to execute your task function. The Promise is resolved with the result your task returned.
@@ -161,11 +170,13 @@ Call `worker.terminate()` for every worker in the pool and release them.
 ### Example
 
 ### Run the example
+
 ```
 npm run dynamic
 ```
 
 ### In the main.js :
+
 ```js
 const { DynamicPool } = require("node-worker-threads-pool");
 
@@ -181,27 +192,23 @@ function task2() {
 
 // execute task1
 (async () => {
-
   const res = await pool.exec({
     task: task1,
     workerData: {
       // some data
-    }
+    },
   });
   console.log(res);
-
 })();
 
 // execute task2
 (async () => {
-
   const res = await pool.exec({
     task: task2,
     workerData: {
       // some data
-    }
+    },
   });
   console.log(res);
-  
 })();
 ```

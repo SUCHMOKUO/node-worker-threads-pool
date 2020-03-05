@@ -1,5 +1,5 @@
-const Pool = require('./pool');
-const PoolWorker = require('./pool-worker');
+const Pool = require("./pool");
+const PoolWorker = require("./pool-worker");
 
 const script = `
   const vm = require('vm');
@@ -27,17 +27,18 @@ module.exports = class DynamicPool extends Pool {
    * with context provided.
    * @param { Object } opt
    * @param { Function } opt.task function to be executed.
-   * @param { * } opt.workerData 
+   * @param { * } opt.workerData
+   * @param { number } opt.timeout timeout in ms for the task. 0 stands for no limit.
    */
-  exec({ task, workerData }) {
-    if (typeof task !== 'function') {
-      throw new Error('task "fn" must be a function!');
+  exec({ task, workerData, timeout }) {
+    if (typeof task !== "function") {
+      throw new TypeError('task "fn" must be a function!');
     }
     const code = createCode(task);
     const param = { code, workerData };
-    return this.runTask(param);
+    return this.runTask(param, timeout);
   }
-}
+};
 
 const es6FuncReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
@@ -53,5 +54,5 @@ function createCode(fn) {
     // es5 function or arrow function.
     expression = strFn;
   }
-  return `({ workerData, task: (${ expression })}).task();`;
+  return `({ workerData, task: (${expression})}).task();`;
 }

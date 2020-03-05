@@ -1,24 +1,21 @@
-const { Worker } = require('worker_threads');
+const { Worker } = require("worker_threads");
 
 /**
  * worker in the pool.
  */
 module.exports = class PoolWorker extends Worker {
-  
   constructor(...args) {
     super(...args);
 
     // working status.
     this.isReady = false;
 
-    this.once("online", () => {
-      this.ready();
-    });
+    this.once("online", () => this.ready());
   }
 
   /**
    * start working.
-   * @param { * } param 
+   * @param { * } param
    */
   work(param) {
     this.isReady = false;
@@ -49,4 +46,4 @@ module.exports = class PoolWorker extends Worker {
     this.isReady = true;
     this.emit("ready", this);
   }
-}
+};

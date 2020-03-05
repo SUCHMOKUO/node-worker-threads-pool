@@ -1,5 +1,5 @@
-const Pool = require('./pool');
-const PoolWorker = require('./pool-worker');
+const Pool = require("./pool");
+const PoolWorker = require("./pool-worker");
 
 const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
@@ -21,7 +21,7 @@ function createScript(fn) {
     this.workerData = workerData;
     const container = {
       workerData,
-      task: (${ expression })
+      task: (${expression})
     };
     
     parentPort.on('message', (param) => {
@@ -43,31 +43,33 @@ module.exports = class StaticPool extends Pool {
   constructor({ size, task, workerData }) {
     super(size);
     switch (typeof task) {
-      case 'string': {
+      case "string": {
         // task is the path of worker script.
         this.fill(() => new PoolWorker(task, { workerData }));
         break;
       }
 
-      case 'function': {
+      case "function": {
         const script = createScript(task);
         this.fill(() => new PoolWorker(script, { eval: true, workerData }));
         break;
       }
 
-      default: throw new Error("Invalid type of 'task'!")
+      default:
+        throw new TypeError("Invalid type of 'task'!");
     }
   }
 
   /**
    * choose a idle worker to run the task
    * with param provided.
-   * @param { * } param 
+   * @param { * } param
+   * @param { number } opt.timeout timeout in ms for the task. 0 stands for no limit.
    */
-  exec(param) {
-    if (typeof param === 'function') {
-      throw new Error('"param" can not be a function!');
+  exec(param, timeout = 0) {
+    if (typeof param === "function") {
+      throw new TypeError('"param" can not be a function!');
     }
-    return this.runTask(param);
+    return this.runTask(param, timeout);
   }
-}
+};

@@ -1,5 +1,6 @@
 const Events = require("events");
 const TaskContainer = require("./task-container");
+const PromiseWithTimer = require("./promise-with-timer");
 
 /**
  * threads pool with node's worker_threads.
@@ -22,7 +23,9 @@ module.exports = class Pool extends Events {
 
     // pool status.
     this.isDeprecated = false;
-    // init worker list.
+    /**
+     * @type { PoolWorker[] }
+     */
     this.workers = new Array(size).fill();
     // worker generator function.
     this._createWorker = null;
@@ -34,10 +37,16 @@ module.exports = class Pool extends Events {
     this.on("worker-ready", (worker) => {
       const taskContainer = this._queue.shift();
       if (taskContainer) {
-        worker
-          .work(taskContainer.task)
-          .then(taskContainer.resolve)
-          .catch(taskContainer.reject);
+        const { task, timeout, resolve, reject } = taskContainer;
+        const p = new PromiseWithTimer(worker.work(task), timeout);
+        p.start()
+          .then(resolve)
+          .catch((err) => {
+            if (err instanceof PromiseWithTimer.TimeoutError) {
+              worker.terminate();
+            }
+            reject(err);
+          });
       }
     });
   }
@@ -50,7 +59,7 @@ module.exports = class Pool extends Events {
     worker.on("ready", (worker) => this.emit("worker-ready", worker));
 
     worker.once("exit", (code) => {
-      if (this.isDeprecated || code == 0) {
+      if (this.isDeprecated || code === 0) {
         // exit normally.
         return;
       }
@@ -87,19 +96,32 @@ module.exports = class Pool extends Events {
   /**
    * choose a worker to do this task.
    * @param { * } task
+   * @param { number } timeout timeout in ms for the task. 0 stands for no limit.
    */
-  async runTask(task) {
+  async runTask(task, timeout = 0) {
     if (this.isDeprecated) {
       throw new Error("This pool is deprecated! Please use a new one.");
     }
+
     const worker = this.workers.find((worker) => worker.isReady);
+
     if (worker) {
-      const result = await worker.work(task);
-      return result;
+      const p = new PromiseWithTimer(worker.work(task), timeout);
+      let res;
+      try {
+        res = await p.start();
+      } catch (err) {
+        if (err instanceof PromiseWithTimer.TimeoutError) {
+          worker.terminate();
+        }
+        throw err;
+      }
+      return res;
     }
+
     // pool is busy, add task to queue and wait for a idle worker.
     return new Promise((resolve, reject) => {
-      const taskContainer = new TaskContainer(task, resolve, reject);
+      const taskContainer = new TaskContainer(task, resolve, reject, timeout);
       this._queue.push(taskContainer);
     });
   }

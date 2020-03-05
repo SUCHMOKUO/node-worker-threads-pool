@@ -1,7 +1,10 @@
 type TaskFunc = (param: any) => any;
 
-declare namespace StaticPool {
-  type ConstructorParam = {
+/**
+ * Threads pool with static task.
+ */
+declare class StaticPool {
+  constructor(param: {
     /** number of workers */
     size: number;
 
@@ -10,35 +13,18 @@ declare namespace StaticPool {
 
     /** data to pass into workers */
     workerData?: any;
-  }
-}
-
-/**
- * Threads pool with static task.
- */
-declare class StaticPool {
-  constructor(param: StaticPool.ConstructorParam);
+  });
 
   /**
    * choose a idle worker to run the task
    * with param provided.
    */
-  exec(param: any): Promise<any>;
+  exec(param: any, timeout?: number): Promise<any>;
 
   /**
    * destroy this pool and terminate all threads.
    */
   destroy(): void;
-}
-
-declare namespace DynamicPool {
-  type ExecParam = {
-    /** function to be executed. */
-    task: TaskFunc;
-
-    /** data to pass into workers. */
-    workerData?: any;
-  }
 }
 
 /**
@@ -55,7 +41,15 @@ declare class DynamicPool {
    * choose a idle worker to execute the function
    * with context provided.
    */
-  exec(param: DynamicPool.ExecParam): Promise<any>;
+  exec(param: {
+    /** function to be executed. */
+    task: TaskFunc;
+
+    /** data to pass into workers. */
+    workerData?: any;
+
+    timeout?: number;
+  }): Promise<any>;
 
   /**
    * destroy this pool and terminate all threads.
@@ -63,7 +57,8 @@ declare class DynamicPool {
   destroy(): void;
 }
 
-export { 
-  DynamicPool,
-  StaticPool
-};
+declare class TimeoutError extends Error {
+  constructor(message: string);
+}
+
+export { DynamicPool, StaticPool, TimeoutError };

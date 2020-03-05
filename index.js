@@ -1,4 +1,5 @@
 module.exports = {
-  StaticPool: require('./src/static-pool'),
-  DynamicPool: require('./src/dynamic-pool')
-}
+  StaticPool: require("./src/static-pool"),
+  DynamicPool: require("./src/dynamic-pool"),
+  TimeoutError: require("./src/promise-with-timer").TimeoutError,
+};

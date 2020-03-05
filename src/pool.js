@@ -1,14 +1,16 @@
-const WaitingQueue = require('./waiting-queue');
+const Events = require("events");
+const TaskContainer = require("./task-container");
 
 /**
  * threads pool with node's worker_threads.
  */
-module.exports = class Pool {
+module.exports = class Pool extends Events {
   /**
    * @param { Number } size number of workers.
    */
   constructor(size) {
-    if (typeof size !== 'number') {
+    super();
+    if (typeof size !== "number") {
       throw new Error('"size" must be the type of number!');
     }
     if (Number.isNaN(size)) {
@@ -24,18 +26,28 @@ module.exports = class Pool {
     this.workers = new Array(size).fill();
     // worker generator function.
     this._createWorker = null;
-    // waiting queue
-    this.queue = new WaitingQueue();
+    /**
+     * @type { TaskContainer[] }
+     */
+    this._queue = [];
+
+    this.on("worker-ready", (worker) => {
+      const taskContainer = this._queue.shift();
+      if (taskContainer) {
+        worker
+          .work(taskContainer.task)
+          .then(taskContainer.resolve)
+          .catch(taskContainer.reject);
+      }
+    });
   }
 
   /**
    * add life cycle hooks to worker.
-   * @param { PoolWorker } worker 
+   * @param { PoolWorker } worker
    */
   _addWorkerHooks(worker) {
-    worker.on("ready", (worker) => {
-      this.queue.emit("worker-ready", worker);
-    });
+    worker.on("ready", (worker) => this.emit("worker-ready", worker));
 
     worker.once("exit", (code) => {
       if (this.isDeprecated || code == 0) {
@@ -60,7 +72,7 @@ module.exports = class Pool {
       const worker = fn();
       this._addWorkerHooks(worker);
       return worker;
-    }
+    };
   }
 
   /**
@@ -74,27 +86,27 @@ module.exports = class Pool {
 
   /**
    * choose a worker to do this task.
-   * @param { * } task 
+   * @param { * } task
    */
   async runTask(task) {
     if (this.isDeprecated) {
       throw new Error("This pool is deprecated! Please use a new one.");
     }
     const worker = this.workers.find((worker) => worker.isReady);
-    if (!worker) {
-      // pool is busy, add task to waiting queue
-      // then wait for a idle worker to do it.
-      const result = await this.queue.runTask(task);
+    if (worker) {
+      const result = await worker.work(task);
       return result;
     }
-
-    const result = await worker.work(task);
-    return result;
+    // pool is busy, add task to queue and wait for a idle worker.
+    return new Promise((resolve, reject) => {
+      const taskContainer = new TaskContainer(task, resolve, reject);
+      this._queue.push(taskContainer);
+    });
   }
 
   /**
    * replace a broken worker with a new one.
-   * @param { PoolWorker } worker 
+   * @param { PoolWorker } worker
    */
   replace(worker) {
     const i = this.workers.indexOf(worker);
@@ -110,5 +122,6 @@ module.exports = class Pool {
     this.isDeprecated = true;
     this.workers.forEach((worker) => worker.terminate());
     this.workers = null;
+    this.removeAllListeners();
   }
-}
+};

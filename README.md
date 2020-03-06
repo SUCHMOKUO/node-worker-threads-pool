@@ -1,6 +1,7 @@
 # node-worker-threads-pool
 
 [![Build Status](https://travis-ci.org/SUCHMOKUO/node-worker-threads-pool.svg?branch=master)](https://travis-ci.org/SUCHMOKUO/node-worker-threads-pool)
+[![Coverage Status](https://coveralls.io/repos/github/SUCHMOKUO/node-worker-threads-pool/badge.svg?branch=master)](https://coveralls.io/github/SUCHMOKUO/node-worker-threads-pool?branch=master)
 [![](https://img.shields.io/npm/v/node-worker-threads-pool.svg)](https://www.npmjs.com/package/node-worker-threads-pool)
 ![](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 ![](https://img.shields.io/npm/dt/node-worker-threads-pool.svg)
@@ -12,7 +13,7 @@ Simple worker threads pool using Node's worker_threads module. Compatible with E
 
 - Use `StaticPool` to create a threads pool with a task from worker file or from task function provided to make use of multi-core processor.
 - Use `DynamicPool` to create a threads pool with different tasks provided each call. Thus you can get more flexibility than `StaticPool` and make use of multi-core processor.
-- Set timeout for the task, thus you won't get a task that running forever.
+- Set **timeout** for the task, thus you won't get a task that running forever.
 
 ## Notification
 

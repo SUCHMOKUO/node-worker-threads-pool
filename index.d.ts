@@ -57,8 +57,9 @@ declare class DynamicPool {
   destroy(): void;
 }
 
-declare class TimeoutError extends Error {
-  constructor(message: string);
-}
+/**
+ * Detect if error is a Timeout error.
+ */
+declare function isTimeoutError(err: Error): boolean;
 
-export { DynamicPool, StaticPool, TimeoutError };
+export { DynamicPool, StaticPool, isTimeoutError };

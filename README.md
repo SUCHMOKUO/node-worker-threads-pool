@@ -8,6 +8,12 @@
 
 Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await.
 
+## With this library, you can:
+
+- Use `StaticPool` to create a threads pool with a task from worker file or from task function provided to make use of multi-core processor.
+- Use `DynamicPool` to create a threads pool with different tasks provided each call. Thus you can get more flexibility than `StaticPool` and make use of multi-core processor.
+- Set timeout for the task, thus you won't get a task that running forever.
+
 ## Notification
 
 1. This module can only run in Node.js.
@@ -35,7 +41,7 @@ Instance of StaticPool is a threads pool with static task provided.
 ### `staticPool.exec(param[, timeout])`
 
 - `param` `<any>` The param your worker script or task function need.
-- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
+- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 
 Choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
@@ -45,12 +51,6 @@ Choose an idle worker in the pool to execute your heavy task with the param you 
 Call `worker.terminate()` for every worker in the pool and release them.
 
 ### Example (with worker file)
-
-### Run the example
-
-```
-npm run static-file
-```
 
 ### In the worker.js :
 
@@ -112,12 +112,6 @@ for (let i = 0; i < 20; i++) {
 
 ### Example (with task function)
 
-### Run the example
-
-```
-npm run static-function
-```
-
 ### In the main.js :
 
 ```js
@@ -158,7 +152,7 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 - `opt`
   - `task` `<function>` Function as a task to do. **Notice: You can not use closure in task function! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
-  - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`.
+  - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 
 Choose one idle worker in the pool to execute your task function. The Promise is resolved with the result your task returned.
@@ -168,12 +162,6 @@ Choose one idle worker in the pool to execute your task function. The Promise is
 Call `worker.terminate()` for every worker in the pool and release them.
 
 ### Example
-
-### Run the example
-
-```
-npm run dynamic
-```
 
 ### In the main.js :
 
@@ -211,4 +199,51 @@ function task2() {
   });
   console.log(res);
 })();
+```
+
+## `function: isTimeoutError`
+
+Detect if a thrown error is `TimeoutError`.
+
+## `isTimeoutError(err)`
+
+- `err <Error>` The error you want to detect.
+- Returns `<boolean>` `true` if the error is a `TimeoutError`.
+
+## Example
+
+```js
+const { isTimeoutError } = require("node-worker-threads-pool");
+
+// create pool.
+...
+
+// static pool exec with timeout.
+const timeout = 1000;
+try {
+  const res = await staticPool.exec(param, timeout);
+} catch (err) {
+  if (isTimeoutError(err)) {
+    // deal with timeout.
+  } else {
+    // deal with other errors.
+  }
+}
+
+// dynamic pool exec with timeout.
+const timeout = 1000;
+try {
+  const res = await dynamicPool.exec({
+    task() {
+      // your task.
+    },
+    timeout
+  });
+} catch (err) {
+  if (isTimeoutError(err)) {
+    // deal with timeout.
+  } else {
+    // deal with other errors.
+  }
+}
 ```

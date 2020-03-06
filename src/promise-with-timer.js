@@ -1,3 +1,17 @@
+class TimeoutError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "TimeoutError";
+  }
+}
+
+/**
+ * @param { Error } err
+ */
+function isTimeoutError(err) {
+  return err instanceof TimeoutError;
+}
+
 class PromiseWithTimer {
   /**
    * @param { Promise } p
@@ -10,7 +24,7 @@ class PromiseWithTimer {
   }
 
   _timer() {
-    return new Promise((resolve, _) => {
+    return new Promise((resolve) => {
       this._timerID = setTimeout(resolve, this._timeout, this._timer);
     });
   }
@@ -26,18 +40,12 @@ class PromiseWithTimer {
     const res = await Promise.race([this._p, this._timer()]);
     if (res === this._timer) {
       // timeout.
-      throw new PromiseWithTimer.TimeoutError("timeout");
+      throw new TimeoutError("timeout");
     }
     clearTimeout(this._timerID);
     return res;
   }
 }
 
-PromiseWithTimer.TimeoutError = class TimeoutError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "TimeoutError";
-  }
-};
-
-module.exports = PromiseWithTimer;
+module.exports.PromiseWithTimer = PromiseWithTimer;
+module.exports.isTimeoutError = isTimeoutError;

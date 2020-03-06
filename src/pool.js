@@ -1,6 +1,6 @@
 const Events = require("events");
 const TaskContainer = require("./task-container");
-const PromiseWithTimer = require("./promise-with-timer");
+const { PromiseWithTimer, isTimeoutError } = require("./promise-with-timer");
 
 /**
  * threads pool with node's worker_threads.
@@ -12,13 +12,13 @@ module.exports = class Pool extends Events {
   constructor(size) {
     super();
     if (typeof size !== "number") {
-      throw new Error('"size" must be the type of number!');
+      throw new TypeError('"size" must be the type of number!');
     }
     if (Number.isNaN(size)) {
       throw new Error('"size" must not be NaN!');
     }
     if (size < 1) {
-      throw new Error('"size" must not be lower than 1!');
+      throw new RangeError('"size" must not be lower than 1!');
     }
 
     // pool status.
@@ -42,7 +42,7 @@ module.exports = class Pool extends Events {
         p.start()
           .then(resolve)
           .catch((err) => {
-            if (err instanceof PromiseWithTimer.TimeoutError) {
+            if (isTimeoutError(err)) {
               worker.terminate();
             }
             reject(err);
@@ -111,7 +111,7 @@ module.exports = class Pool extends Events {
       try {
         res = await p.start();
       } catch (err) {
-        if (err instanceof PromiseWithTimer.TimeoutError) {
+        if (isTimeoutError(err)) {
           worker.terminate();
         }
         throw err;

@@ -1,9 +1,66 @@
+const Pool = require("../src/pool");
 const { DynamicPool, StaticPool, isTimeoutError } = require("..");
 const os = require("os");
 const path = require("path");
 const numCPU = os.cpus().length;
 
+describe("pool tests", () => {
+  test("should throw error if size is not number", () => {
+    expect(() => {
+      new Pool("a");
+    }).toThrowError(TypeError);
+  });
+
+  test("should throw error if size is NaN", () => {
+    expect(() => {
+      new Pool(NaN);
+    }).toThrowError('"size" must not be NaN!');
+  });
+
+  test("should throw error if size < 1", () => {
+    expect(() => {
+      new Pool(0);
+    }).toThrowError(RangeError);
+  });
+
+  test("should throw error if pool is deprecated", async () => {
+    const pool = new Pool(5);
+    pool.destroy();
+    try {
+      await pool.runTask();
+    } catch (err) {
+      expect(err.message).toBe(
+        "This pool is deprecated! Please use a new one."
+      );
+    }
+  });
+});
+
 describe("static pool tests", () => {
+  test("should throw error if task is not string or function", () => {
+    expect(() => {
+      new StaticPool({
+        size: numCPU,
+        task: 1,
+      });
+    }).toThrowError(TypeError);
+  });
+
+  test("should throw error if param is function", () => {
+    const pool = new StaticPool({
+      size: numCPU,
+      task(n) {
+        return n;
+      },
+    });
+
+    expect(() => {
+      pool.exec(() => {});
+    }).toThrowError(TypeError);
+
+    pool.destroy();
+  });
+
   test("test task function with workerData", async () => {
     const pool = new StaticPool({
       size: numCPU,
@@ -189,6 +246,18 @@ describe("dynamic pool tests", () => {
       workerData: 10,
     });
     expect(res).toBe(10);
+
+    pool.destroy();
+  });
+
+  test("should throw error if task is not function", () => {
+    const pool = new DynamicPool(numCPU);
+
+    expect(() => {
+      pool.exec({
+        task: 1,
+      });
+    }).toThrowError(TypeError);
 
     pool.destroy();
   });

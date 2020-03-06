@@ -3,6 +3,10 @@ language: node_js
 node_js:
   - "13"
 
+script:
+  - npm install coveralls --save-dev
+  - jest --coverage --coverageReporters=text-lcov | coveralls
+
 cache:
   directories:
     - node_modules

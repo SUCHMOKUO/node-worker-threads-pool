@@ -142,7 +142,11 @@ module.exports = class Pool extends Events {
    */
   destroy() {
     this.isDeprecated = true;
-    this.workers.forEach((worker) => worker.terminate());
+    this.workers.forEach((worker) => {
+      if (worker) {
+        worker.terminate();
+      }
+    });
     this.workers = null;
     this.removeAllListeners();
   }

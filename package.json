@@ -18,10 +18,14 @@
   },
   "keywords": [
     "nodejs",
+    "async",
+    "promise",
     "worker_threads",
     "worker",
     "thread",
-    "pool"
+    "pool",
+    "threadpool",
+    "multi threading"
   ],
   "author": "mokuo",
   "license": "MIT",

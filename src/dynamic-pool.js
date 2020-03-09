@@ -5,9 +5,13 @@ const script = `
   const vm = require('vm');
   const { parentPort } = require('worker_threads');
 
-  parentPort.on('message', ({ code, workerData }) => {
+  process.once("unhandledRejection", (err) => {
+      throw err;
+  });
+
+  parentPort.on('message', async ({ code, workerData }) => {
     this.workerData = workerData;
-    const result = vm.runInThisContext(code);
+    const result = await vm.runInThisContext(code);
     parentPort.postMessage(result);
   });
 `;
@@ -45,7 +49,7 @@ const es6FuncReg = /^task[^]*([^]*)[^]*{[^]*}$/;
  * @param { Function } fn
  */
 function createCode(fn) {
-  const strFn = fn.toString();
+  const strFn = Function.prototype.toString.call(fn);
   let expression = "";
   if (es6FuncReg.test(strFn)) {
     // es6 style in-object function.

@@ -365,3 +365,29 @@ describe("timeout tests", () => {
     }
   });
 });
+
+describe("async task function tests", () => {
+  test("should static pool work with async task", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task: async function(n) {
+        return n;
+      },
+    });
+    const res = await pool.exec(1);
+    expect(res).toBe(1);
+    pool.destroy();
+  });
+
+  test("should dynamic pool work with async task", async () => {
+    const pool = new DynamicPool(1);
+    const res = await pool.exec({
+      task: async function() {
+        return this.workerData;
+      },
+      workerData: 1,
+    });
+    expect(res).toBe(1);
+    pool.destroy();
+  });
+});

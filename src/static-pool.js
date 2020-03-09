@@ -6,7 +6,7 @@ const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
  * @param { Function } fn
  */
 function createScript(fn) {
-  const strFn = fn.toString();
+  const strFn = Function.prototype.toString.call(fn);
   let expression = "";
   if (fnReg.test(strFn)) {
     // es6 style in-object function.
@@ -24,8 +24,12 @@ function createScript(fn) {
       task: (${expression})
     };
     
-    parentPort.on('message', (param) => {
-      parentPort.postMessage(container.task(param));
+    process.once("unhandledRejection", (err) => {
+        throw err;
+    });
+
+    parentPort.on('message', async (param) => {
+      parentPort.postMessage(await container.task(param));
     });
   `;
 }

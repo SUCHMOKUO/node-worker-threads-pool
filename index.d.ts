@@ -1,5 +1,3 @@
-type TaskFunc = (param: any) => any;
-
 /**
  * Threads pool with static task.
  */
@@ -9,7 +7,7 @@ declare class StaticPool {
     size: number;
 
     /** path of worker file or a worker function */
-    task: string | TaskFunc;
+    task: string | ((param: any) => any);
 
     /** data to pass into workers */
     workerData?: any;
@@ -43,7 +41,7 @@ declare class DynamicPool {
    */
   exec(param: {
     /** function to be executed. */
-    task: TaskFunc;
+    task: () => any;
 
     /** data to pass into workers. */
     workerData?: any;

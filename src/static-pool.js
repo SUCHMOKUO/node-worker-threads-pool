@@ -43,19 +43,31 @@ module.exports = class StaticPool extends Pool {
    * @param { Number } opt.size number of workers
    * @param { String | Function } opt.task path of worker file or a worker function
    * @param { * } opt.workerData data to pass into workers
+   * @param { Boolean } opt.shareEnv enable SHARE_ENV for all threads in pool
    */
-  constructor({ size, task, workerData }) {
+  constructor({ size, task, workerData, shareEnv }) {
     super(size);
+
+    const workerOpt = { workerData };
+    /* istanbul ignore next */
+    if (shareEnv) {
+      const { SHARE_ENV } = require("worker_threads");
+      workerOpt.env = SHARE_ENV;
+    }
+    if (typeof task === "function") {
+      workerOpt.eval = true;
+    }
+
     switch (typeof task) {
       case "string": {
         // task is the path of worker script.
-        this.fill(() => new PoolWorker(task, { workerData }));
+        this.fill(() => new PoolWorker(task, workerOpt));
         break;
       }
 
       case "function": {
         const script = createScript(task);
-        this.fill(() => new PoolWorker(script, { eval: true, workerData }));
+        this.fill(() => new PoolWorker(script, workerOpt));
         break;
       }
 

@@ -21,9 +21,17 @@ const script = `
  * each call.
  */
 module.exports = class DynamicPool extends Pool {
-  constructor(size) {
+  constructor(size, opt) {
     super(size);
-    this.fill(() => new PoolWorker(script, { eval: true }));
+    const workerOpt = { eval: true };
+    if (opt) {
+      /* istanbul ignore next */
+      if (opt.shareEnv) {
+        const { SHARE_ENV } = require("worker_threads");
+        workerOpt.env = SHARE_ENV;
+      }
+    }
+    this.fill(() => new PoolWorker(script, workerOpt));
   }
 
   /**

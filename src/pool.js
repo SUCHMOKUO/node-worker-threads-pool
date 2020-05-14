@@ -106,17 +106,16 @@ module.exports = class Pool extends Events {
     const worker = this.workers.find((worker) => worker.isReady);
 
     if (worker) {
-      const p = new PromiseWithTimer(worker.work(task), timeout);
-      let res;
       try {
-        res = await p.start();
+        const p = new PromiseWithTimer(worker.work(task), timeout);
+        const res = await p.start();
+        return res;
       } catch (err) {
         if (isTimeoutError(err)) {
           worker.terminate();
         }
         throw err;
       }
-      return res;
     }
 
     // pool is busy, add task to queue and wait for a idle worker.

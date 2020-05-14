@@ -11,6 +11,9 @@ declare class StaticPool {
 
     /** data to pass into workers */
     workerData?: any;
+
+    /** enable SHARE_ENV for all threads in pool */
+    shareEnv?: boolean;
   });
 
   /**
@@ -32,8 +35,15 @@ declare class StaticPool {
 declare class DynamicPool {
   /**
    * @param size number of threads.
+   * @param opt additional options.
    */
-  constructor(size: number);
+  constructor(
+    size: number,
+    opt?: {
+      /** enable SHARE_ENV for all threads in pool */
+      shareEnv?: boolean;
+    }
+  );
 
   /**
    * choose a idle worker to execute the function

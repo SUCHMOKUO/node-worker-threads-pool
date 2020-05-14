@@ -4,6 +4,12 @@ const os = require("os");
 const path = require("path");
 const numCPU = os.cpus().length;
 
+function wait(t) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, t);
+  });
+}
+
 describe("pool tests", () => {
   test("should throw error if size is not number", () => {
     expect(() => {
@@ -343,11 +349,25 @@ describe("timeout tests", () => {
       },
     });
 
+    await wait(100);
+
     try {
       await pool.exec(null, 1000);
     } catch (err) {
       expect(isTimeoutError(err)).toBe(true);
     }
+  });
+
+  test("should static pool pass within timeout", async () => {
+    pool = new StaticPool({
+      size: numCPU,
+      task() {
+        return 1;
+      },
+    });
+
+    const res = await pool.exec(null, 1000);
+    expect(res).toBe(1);
   });
 
   test("test dynamic pool with timeout", async () => {
@@ -363,6 +383,19 @@ describe("timeout tests", () => {
     } catch (err) {
       expect(isTimeoutError(err)).toBe(true);
     }
+  });
+
+  test("should dynamic pool pass within timeout", async () => {
+    pool = new DynamicPool(numCPU);
+
+    const res = await pool.exec({
+      task() {
+        return 1;
+      },
+      timeout: 1000,
+    });
+
+    expect(res).toBe(1);
   });
 });
 
@@ -389,5 +422,14 @@ describe("async task function tests", () => {
     });
     expect(res).toBe(1);
     pool.destroy();
+  });
+});
+
+describe("SHARE_ENV tests", () => {
+  const { promisify } = require("util");
+  const exec = promisify(require("child_process").exec);
+
+  test("should pass", async () => {
+    await exec("node ./test/shareEnv.js");
   });
 });

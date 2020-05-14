@@ -38,6 +38,7 @@ Instance of StaticPool is a threads pool with static task provided.
   - `size` `<number>` Number of workers in this pool.
   - `task` `<string | function>` Static task to do. It can be a absolute path of worker file or a function. **Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
+  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for every threads in pool.
 
 ### `staticPool.exec(param[, timeout])`
 
@@ -144,9 +145,11 @@ for (let i = 0; i < 20; i++) {
 
 Instance of DynamicPool is a threads pool executes different task functions provided every call.
 
-### `new DynamicPool(size)`
+### `new DynamicPool(size[, opt])`
 
 - `size` `<number>` Number of workers in this pool.
+- `opt`
+  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for every threads in pool.
 
 ### `dynamicPool.exec(opt)`
 

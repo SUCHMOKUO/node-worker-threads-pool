@@ -14,6 +14,14 @@ declare class StaticPool {
 
     /** enable SHARE_ENV for all threads in pool */
     shareEnv?: boolean;
+
+    /** set resourceLimits for all threads in pool */
+    resourceLimits?: {
+      maxYoungGenerationSizeMb?: number;
+      maxOldGenerationSizeMb?: number;
+      codeRangeSizeMb?: number;
+      stackSizeMb?: number;
+    };
   });
 
   /**
@@ -42,6 +50,14 @@ declare class DynamicPool {
     opt?: {
       /** enable SHARE_ENV for all threads in pool */
       shareEnv?: boolean;
+
+      /** set resourceLimits for all threads in pool */
+      resourceLimits?: {
+        maxYoungGenerationSizeMb?: number;
+        maxOldGenerationSizeMb?: number;
+        codeRangeSizeMb?: number;
+        stackSizeMb?: number;
+      };
     }
   );
 

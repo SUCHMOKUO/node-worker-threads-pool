@@ -7,7 +7,7 @@
 ![](https://img.shields.io/npm/dt/node-worker-threads-pool.svg)
 ![](https://img.shields.io/npm/l/node-worker-threads-pool.svg)
 
-Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await.
+Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await and TypeScript🚀.
 
 ## With this library, you can:
 
@@ -18,7 +18,6 @@ Simple worker threads pool using Node's worker_threads module. Compatible with E
 ## Notification
 
 1. This module can only run in Node.js.
-2. Since Node's worker_threads module is still in stage of **Experimental**, this module can be accessed ~~only if the `--experimental-worker` flag is added.~~, if node.js version is above 11.7.0, worker api is exposed by default.
 
 ## Installation
 
@@ -38,7 +37,8 @@ Instance of StaticPool is a threads pool with static task provided.
   - `size` `<number>` Number of workers in this pool.
   - `task` `<string | function>` Static task to do. It can be a absolute path of worker file or a function. **Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
   - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
-  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for every threads in pool.
+  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for all threads in pool.
+  - `resourceLimits` `<Object>` Set [resourceLimits](https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits) for all threads in pool.
 
 ### `staticPool.exec(param[, timeout])`
 
@@ -150,6 +150,7 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 - `size` `<number>` Number of workers in this pool.
 - `opt`
   - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for every threads in pool.
+  - `resourceLimits` `<Object>` Set [resourceLimits](https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits) for all threads in pool.
 
 ### `dynamicPool.exec(opt)`
 

@@ -23,12 +23,18 @@ const script = `
 module.exports = class DynamicPool extends Pool {
   constructor(size, opt) {
     super(size);
-    const workerOpt = { eval: true };
+    const workerOpt = {
+      eval: true,
+    };
     if (opt) {
       /* istanbul ignore next */
       if (opt.shareEnv) {
         const { SHARE_ENV } = require("worker_threads");
         workerOpt.env = SHARE_ENV;
+      }
+      /* istanbul ignore next */
+      if (typeof opt.resourceLimits === "object") {
+        workerOpt.resourceLimits = opt.resourceLimits;
       }
     }
     this.fill(() => new PoolWorker(script, workerOpt));
@@ -47,7 +53,10 @@ module.exports = class DynamicPool extends Pool {
       throw new TypeError('task "fn" must be a function!');
     }
     const code = createCode(task);
-    const param = { code, workerData };
+    const param = {
+      code,
+      workerData,
+    };
     return this.runTask(param, timeout);
   }
 };

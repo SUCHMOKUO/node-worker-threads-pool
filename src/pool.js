@@ -23,17 +23,33 @@ module.exports = class Pool extends Events {
 
     // pool status.
     this.isDeprecated = false;
+
     /**
+     * @private
      * @type { PoolWorker[] }
      */
     this.workers = new Array(size).fill();
-    // worker generator function.
-    this._createWorker = null;
+
     /**
+     * worker generator function.
+     * @private
+     */
+    this._createWorker = null;
+
+    /**
+     * @private
      * @type { TaskContainer[] }
      */
     this._queue = [];
 
+    this._addEventHandlers();
+  }
+
+  /**
+   * add event handlers to pool.
+   * @private
+   */
+  _addEventHandlers() {
     this.on("worker-ready", (worker) => {
       const taskContainer = this._queue.shift();
       if (taskContainer) {
@@ -53,6 +69,7 @@ module.exports = class Pool extends Events {
 
   /**
    * add life cycle hooks to worker.
+   * @private
    * @param { PoolWorker } worker
    */
   _addWorkerHooks(worker) {
@@ -74,6 +91,7 @@ module.exports = class Pool extends Events {
 
   /**
    * set worker generator function.
+   * @private
    * @param { Function } workerGen worker generator function.
    */
   _setWorkerGen(fn) {

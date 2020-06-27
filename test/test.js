@@ -2,6 +2,7 @@ const Pool = require("../src/pool");
 const { DynamicPool, StaticPool, isTimeoutError } = require("..");
 const os = require("os");
 const path = require("path");
+const { worker } = require("cluster");
 const numCPU = os.cpus().length;
 
 function wait(t) {
@@ -349,7 +350,7 @@ describe("timeout tests", () => {
       },
     });
 
-    await wait(100);
+    await wait(500);
 
     try {
       await pool.exec(null, 1000);
@@ -431,5 +432,56 @@ describe("SHARE_ENV tests", () => {
 
   test("should pass", async () => {
     await exec("node ./test/shareEnv.js");
+  });
+});
+
+describe("resourceLimits tests", () => {
+  const STACK_SIZE_MB = 16;
+
+  function shouldSetResourceLimits(pool) {
+    return new Promise((resolve, reject) => {
+      pool.once("worker-ready", (worker) => {
+        const stackSizeMb = worker.resourceLimits.stackSizeMb;
+        if (stackSizeMb === STACK_SIZE_MB) {
+          resolve();
+        } else {
+          reject(`stackSizeMb is ${stackSizeMb}`);
+        }
+      });
+    });
+  }
+
+  test("should static pool created with resourceLimits", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task() {},
+      resourceLimits: {
+        stackSizeMb: STACK_SIZE_MB,
+      },
+    });
+
+    try {
+      await shouldSetResourceLimits(pool);
+    } catch (error) {
+      throw error;
+    } finally {
+      pool.destroy();
+    }
+  });
+
+  test("should dynamic pool created with resourceLimits", async () => {
+    const pool = new DynamicPool(1, {
+      resourceLimits: {
+        stackSizeMb: STACK_SIZE_MB,
+      },
+    });
+
+    try {
+      await shouldSetResourceLimits(pool);
+    } catch (error) {
+      throw error;
+    } finally {
+      pool.destroy();
+    }
   });
 });

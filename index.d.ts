@@ -1,13 +1,13 @@
 /**
  * Threads pool with static task.
  */
-declare class StaticPool {
+declare class StaticPool<T, U> {
   constructor(param: {
     /** number of workers */
     size: number;
 
     /** path of worker file or a worker function */
-    task: string | ((param: any) => any);
+    task: string | ((param: T) => Promise<U>) | ((param: T) => U);
 
     /** data to pass into workers */
     workerData?: any;
@@ -28,7 +28,7 @@ declare class StaticPool {
    * choose a idle worker to run the task
    * with param provided.
    */
-  exec(param: any, timeout?: number): Promise<any>;
+  exec(param: T, timeout?: number): Promise<U>;
 
   /**
    * destroy this pool and terminate all threads.
@@ -65,15 +65,15 @@ declare class DynamicPool {
    * choose a idle worker to execute the function
    * with context provided.
    */
-  exec(param: {
+  exec<T = any>(param: {
     /** function to be executed. */
-    task: () => any;
+    task: (() => Promise<T>) | (() => T);
 
     /** data to pass into workers. */
     workerData?: any;
 
     timeout?: number;
-  }): Promise<any>;
+  }): Promise<T>;
 
   /**
    * destroy this pool and terminate all threads.

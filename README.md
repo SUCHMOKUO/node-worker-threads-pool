@@ -13,7 +13,7 @@ Simple worker threads pool using Node's worker_threads module. Compatible with E
 
 - Use `StaticPool` to create a threads pool with a task from worker file or from task function provided to make use of multi-core processor.
 - Use `DynamicPool` to create a threads pool with different tasks provided each call. Thus you can get more flexibility than `StaticPool` and make use of multi-core processor.
-- Set **timeout** for the task, thus you won't get a task that running forever.
+- Gain extra **controllability** for the underlying threads by the power of worker_threads, like resourceLimits, SHARE_ENV, transferList and more.
 
 ## Notification
 
@@ -25,6 +25,53 @@ Simple worker threads pool using Node's worker_threads module. Compatible with E
 npm install node-worker-threads-pool --save
 ```
 
+## Simple Example
+
+Quickly create a pool with static task:
+
+```js
+const { StaticPool } = require("node-worker-threads-pool");
+
+const staticPool = new StaticPool({
+  size: 4,
+  task: (n) => n + 1,
+});
+
+staticPool.exec(1).then((result) => {
+  console.log("result from thread pool:", result); // result will be 2.
+});
+```
+
+There you go! 🎉
+
+Create a pool with dynamic task:
+
+```js
+const { DynamicPool } = require("node-worker-threads-pool");
+
+const dynamicPool = new DynamicPool(4);
+
+dynamicPool
+  .exec({
+    task: (n) => n + 1,
+    param: 1,
+  })
+  .then((result) => {
+    console.log(result); // result will be 2.
+  });
+
+dynamicPool
+  .exec({
+    task: (n) => n + 2,
+    param: 1,
+  })
+  .then((result) => {
+    console.log(result); // result will be 3.
+  });
+```
+
+About the **differences** between StaticPool and DynamicPool, please see [this issue](https://github.com/SUCHMOKUO/node-worker-threads-pool/issues/3).
+
 ## API
 
 ## `Class: StaticPool`
@@ -35,24 +82,12 @@ Instance of StaticPool is a threads pool with static task provided.
 
 - `opt` `<Object>`
   - `size` `<number>` Number of workers in this pool.
-  - `task` `<string | function>` Static task to do. It can be a absolute path of worker file or a function. **Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
-  - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
-  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for all threads in pool.
-  - `resourceLimits` `<Object>` Set [resourceLimits](https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits) for all threads in pool.
+  - `task` `<string | function>` Static task to do. It can be a absolute path of worker file ([usage here](#example-with-worker-file)) or a function. **⚠️Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, use workerData to pass some [cloneable data].**
+  - `workerData` `<any>` [Cloneable data][cloneable data] you want to access in task function. ([usage here](#access-workerdata-in-task-function))
+  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV] for all threads in pool.
+  - `resourceLimits` `<Object>` Set [resourceLimits] for all threads in pool.
 
-### `staticPool.exec(param[, timeout])`
-
-- `param` `<any>` The param your worker script or task function need.
-- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
-- Returns: `<Promise>`
-
-Choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
-
-### `staticPool.destroy()`
-
-Call `worker.terminate()` for every worker in the pool and release them.
-
-### Example (with worker file)
+### Example with worker file
 
 ### In the worker.js :
 
@@ -112,34 +147,84 @@ for (let i = 0; i < 20; i++) {
 }
 ```
 
-### Example (with task function)
+### Access workerData in task function
 
-### In the main.js :
+You can access workerData in task function using `this` keyword:
 
 ```js
-const { StaticPool } = require("node-worker-threads-pool");
-
 const pool = new StaticPool({
   size: 4,
-  task: function(n) {
-    const num = this.workerData.num;
-    for (let i = 0; i < num; i++) {
-      n += i;
-    }
-    return n;
+  workerData: "workerData!",
+  task() {
+    console.log(this.workerData);
   },
-  workerData: {
-    num: 1 << 30,
+});
+```
+
+**⚠️Remember not to use arrow function as a task function when you use `this.workerData`, because arrow function don't have `this` binding.**
+
+### `staticPool.exec(param[, timeout])`
+
+- `param` `<any>` The param your worker script or task function need.
+- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
+- Returns: `<Promise>`
+
+The simplest way to execute a task without considering other configurations. This will choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
+
+### `staticPool.createExecutor()`
+
+- Returns: `<StaticTaskExecutor>`
+
+Create a task executor of this pool. This is used to apply some advanced settings to a task. See more details of [StaticTaskExecutor](#class-statictaskexecutor).
+
+### `staticPool.destroy()`
+
+Call `worker.terminate()` for every worker in the pool and release them.
+
+## `Class: StaticTaskExecutor`
+
+Executor for StaticPool. Used to apply some advanced settings to a task.
+
+### Example
+
+```js
+const staticPool = new StaticPool({
+  size: 4,
+  task: (buf) => {
+    // do something with buf.
   },
 });
 
-for (let i = 0; i < 20; i++) {
-  (async () => {
-    const res = await pool.exec(i);
-    console.log(`result${i}:`, res);
-  })();
-}
+const buf = Buffer.alloc(1024 * 1024);
+
+staticPool
+  .createExecutor() // create a StaticTaskExecutor instance.
+  .setTimeout(1000) // set timeout for task.
+  .setTransferList([buf.buffer]) // set transferList.
+  .exec(buf) // execute!
+  .then(() => console.log("done!"));
 ```
+
+### `staticTaskExecutor.setTimeout(t)`
+
+- `t` `<number>` timeout in millisecond.
+- Returns: `<StaticTaskExecutor>`
+
+Set timeout for this task.
+
+### `staticTaskExecutor.setTransferList(transferList)`
+
+- `transferList` `<Object[]>`
+- Returns: `<StaticTaskExecutor>`
+
+Set [transferList] for this task. This is useful when you want to pass some huge data into worker thread.
+
+### `staticTaskExecutor.exec(param)`
+
+- `param` `<any>`
+- Returns: `<Promise>`
+
+Execute this task with the parameter and settings provided. The Promise is resolved with the result your task returned.
 
 ## `Class: DynamicPool`
 
@@ -149,62 +234,72 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 
 - `size` `<number>` Number of workers in this pool.
 - `opt`
-  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV](https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env) for every threads in pool.
-  - `resourceLimits` `<Object>` Set [resourceLimits](https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits) for all threads in pool.
+  - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV] for every threads in pool.
+  - `resourceLimits` `<Object>` Set [resourceLimits] for all threads in pool.
 
 ### `dynamicPool.exec(opt)`
 
 - `opt`
-  - `task` `<function>` Function as a task to do. **Notice: You can not use closure in task function! If you do want to use external data in the function, you can use workerData to pass some [cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).**
-  - `workerData` `<any>` [Cloneable data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) you want to access in task function.
+  - `task` `<function>` Function as a task to do. **⚠️Notice: You can not use closure in task function!**
+  - ~~`workerData` `<any>` [cloneable data] you want to access in task function.~~ (deprecated since 1.4.0, use `param` instead)
+  - `param` `<any>` [cloneable data] you want to pass into task function as parameter.
   - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 
 Choose one idle worker in the pool to execute your task function. The Promise is resolved with the result your task returned.
 
+### `dynamicPool.createExecutor(task)`
+
+- `task` `Function` task function.
+- Returns: `<DynamicTaskExecutor>`
+
+Create a task executor of this pool. This is used to apply some advanced settings to a task. See more details of [DynamicTaskExecutor](#class-dynamictaskexecutor).
+
 ### `dynamicPool.destroy()`
 
 Call `worker.terminate()` for every worker in the pool and release them.
 
+## `Class: DynamicTaskExecutor`
+
+Executor for DynamicPool. Used to apply some advanced settings to a task.
+
 ### Example
 
-### In the main.js :
-
 ```js
-const { DynamicPool } = require("node-worker-threads-pool");
+const dynamicPool = new DynamicPool(4);
 
-const pool = new DynamicPool(4);
+const buf = Buffer.alloc(1024 * 1024);
 
-function task1() {
-  // something heavy.
-}
-
-function task2() {
-  // something heavy too.
-}
-
-// execute task1
-(async () => {
-  const res = await pool.exec({
-    task: task1,
-    workerData: {
-      // some data
-    },
-  });
-  console.log(res);
-})();
-
-// execute task2
-(async () => {
-  const res = await pool.exec({
-    task: task2,
-    workerData: {
-      // some data
-    },
-  });
-  console.log(res);
-})();
+dynamicPool
+  .createExecutor((buf) => {
+    // do something with buf.
+  })
+  .setTimeout(1000) // set timeout for task.
+  .setTransferList([buf.buffer]) // set transferList.
+  .exec(buf) // execute!
+  .then(() => console.log("done!"));
 ```
+
+### `dynamicTaskExecutor.setTimeout(t)`
+
+- `t` `<number>` timeout in millisecond.
+- Returns: `<DynamicTaskExecutor>`
+
+Set timeout for this task.
+
+### `dynamicTaskExecutor.setTransferList(transferList)`
+
+- `transferList` `<Object[]>`
+- Returns: `<DynamicTaskExecutor>`
+
+Set [transferList] for this task. This is useful when you want to pass some huge data into worker thread.
+
+### `dynamicTaskExecutor.exec(param)`
+
+- `param` `<any>`
+- Returns: `<Promise>`
+
+Execute this task with the parameter and settings provided. The Promise is resolved with the result your task returned.
 
 ## `function: isTimeoutError`
 
@@ -252,3 +347,9 @@ try {
   }
 }
 ```
+
+[cloneable data]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+[resourcelimits]: https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits
+[share_env]: https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env
+[transferlist]: https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_port_postmessage_value_transferlist
+[arrow function]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions

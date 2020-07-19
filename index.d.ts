@@ -38,7 +38,7 @@ interface BaseTaskExecutor<ParamType, ResultType> {
    */
   setTransferList(transferList: TransferList): this;
 
-  /** Execute this task whit the parameter provided. */
+  /** Execute this task with the parameter provided. */
   exec(): Promise<ResultType>;
   exec(param: ParamType): Promise<ResultType>;
 }

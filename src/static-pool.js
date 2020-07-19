@@ -1,31 +1,24 @@
-const Pool = require("./pool");
-const PoolWorker = require("./pool-worker");
+const { Pool } = require("./pool");
+const { PoolWorker } = require("./pool-worker");
+const { StaticTaskExecutor } = require("./task-executor");
+const { createCode } = require("./create-code");
 
 const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
- * @param { Function } fn
+ * @param {Function} fn
  */
 function createScript(fn) {
-  const strFn = Function.prototype.toString.call(fn);
-  let expression = "";
-  if (fnReg.test(strFn)) {
-    // es6 style in-object function.
-    expression = "function " + strFn;
-  } else {
-    // es5 function or arrow function.
-    expression = strFn;
-  }
   return `
     const { parentPort, workerData } = require('worker_threads');
 
     this.workerData = workerData;
     const container = {
       workerData,
-      task: (${expression})
+      task: ${createCode(fn)}
     };
     
     process.once("unhandledRejection", (err) => {
-        throw err;
+      throw err;
     });
 
     parentPort.on('message', async (param) => {
@@ -34,17 +27,14 @@ function createScript(fn) {
   `;
 }
 
-/**
- * Threads pool with static task.
- */
-module.exports = class StaticPool extends Pool {
+class StaticPool extends Pool {
   /**
-   * @param { Object } opt
-   * @param { Number } opt.size number of workers
-   * @param { String | Function } opt.task path of worker file or a worker function
-   * @param { * } opt.workerData data to pass into workers
-   * @param { Boolean } opt.shareEnv enable SHARE_ENV for all threads in pool
-   * @param { Object } resourceLimits
+   * @param {object} opt
+   * @param {number} opt.size
+   * @param {string | Function} opt.task
+   * @param {any} opt.workerData
+   * @param {boolean} opt.shareEnv
+   * @param {object} opt.resourceLimits
    */
   constructor({ size, task, workerData, shareEnv, resourceLimits }) {
     super(size);
@@ -65,7 +55,6 @@ module.exports = class StaticPool extends Pool {
 
     switch (typeof task) {
       case "string": {
-        // task is the path of worker script.
         this.fill(() => new PoolWorker(task, workerOpt));
         break;
       }
@@ -82,15 +71,19 @@ module.exports = class StaticPool extends Pool {
   }
 
   /**
-   * choose a idle worker to run the task
-   * with param provided.
-   * @param { * } param
-   * @param { number } opt.timeout timeout in ms for the task. 0 stands for no limit.
+   * @param {any} param
+   * @param {number} timeout
    */
   exec(param, timeout = 0) {
     if (typeof param === "function") {
       throw new TypeError('"param" can not be a function!');
     }
-    return this.runTask(param, timeout);
+    return this.dispatchTask(param, { timeout });
   }
-};
+
+  createExecutor() {
+    return new StaticTaskExecutor(this);
+  }
+}
+
+module.exports.StaticPool = StaticPool;

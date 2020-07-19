@@ -1,26 +1,36 @@
-const Pool = require("./pool");
-const PoolWorker = require("./pool-worker");
+/**
+ * @typedef {import("./pool-worker").TaskConfig} TaskConfig
+ */
+
+/**
+ * @typedef {object} DynamicPoolWorkerParam
+ * @property {string} code
+ * @property {any} [param]
+ */
+
+const { Pool } = require("./pool");
+const { PoolWorker } = require("./pool-worker");
+const { DynamicTaskExecutor } = require("./task-executor");
+const { createCode } = require("./create-code");
 
 const script = `
   const vm = require('vm');
   const { parentPort } = require('worker_threads');
 
   process.once("unhandledRejection", (err) => {
-      throw err;
+    throw err;
   });
 
-  parentPort.on('message', async ({ code, workerData }) => {
+  parentPort.on('message', async ({ code, workerData, param }) => {
     this.workerData = workerData;
-    const result = await vm.runInThisContext(code);
+    const task = vm.runInThisContext(code);
+    const container = { task, workerData };
+    const result = await container.task(param);
     parentPort.postMessage(result);
   });
 `;
 
-/**
- * Threads pool that can run different function
- * each call.
- */
-module.exports = class DynamicPool extends Pool {
+class DynamicPool extends Pool {
   constructor(size, opt) {
     super(size);
     const workerOpt = {
@@ -41,39 +51,31 @@ module.exports = class DynamicPool extends Pool {
   }
 
   /**
-   * choose a idle worker to execute the function
-   * with context provided.
-   * @param { Object } opt
-   * @param { Function } opt.task function to be executed.
-   * @param { * } opt.workerData
-   * @param { number } opt.timeout timeout in ms for the task. 0 stands for no limit.
+   * @param {object} opt
+   * @param {Function} opt.task
+   * @param {any} opt.param
+   * @param {any} opt.workerData
+   * @param {number} opt.timeout
    */
-  exec({ task, workerData, timeout }) {
+  exec({ task, param, workerData, timeout = 0 }) {
     if (typeof task !== "function") {
       throw new TypeError('task "fn" must be a function!');
     }
     const code = createCode(task);
-    const param = {
+    const workerParam = {
       code,
+      param,
       workerData,
     };
-    return this.runTask(param, timeout);
+    return this.dispatchTask(workerParam, { timeout });
   }
-};
 
-const es6FuncReg = /^task[^]*([^]*)[^]*{[^]*}$/;
-/**
- * @param { Function } fn
- */
-function createCode(fn) {
-  const strFn = Function.prototype.toString.call(fn);
-  let expression = "";
-  if (es6FuncReg.test(strFn)) {
-    // es6 style in-object function.
-    expression = "function " + strFn;
-  } else {
-    // es5 function or arrow function.
-    expression = strFn;
+  /**
+   * @param {Function} task
+   */
+  createExecutor(task) {
+    return new DynamicTaskExecutor(this, task);
   }
-  return `({ workerData, task: (${expression})}).task();`;
 }
+
+module.exports.DynamicPool = DynamicPool;

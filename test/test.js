@@ -1,8 +1,7 @@
-const Pool = require("../src/pool");
+const { Pool } = require("../src/pool");
 const { DynamicPool, StaticPool, isTimeoutError } = require("..");
 const os = require("os");
 const path = require("path");
-const { worker } = require("cluster");
 const numCPU = os.cpus().length;
 
 function wait(t) {
@@ -14,6 +13,7 @@ function wait(t) {
 describe("pool tests", () => {
   test("should throw error if size is not number", () => {
     expect(() => {
+      // @ts-ignore
       new Pool("a");
     }).toThrowError(TypeError);
   });
@@ -34,7 +34,8 @@ describe("pool tests", () => {
     const pool = new Pool(5);
     pool.destroy();
     try {
-      await pool.runTask();
+      // @ts-ignore
+      await pool.dispatchTask();
     } catch (err) {
       expect(err.message).toBe(
         "This pool is deprecated! Please use a new one."
@@ -48,6 +49,7 @@ describe("static pool tests", () => {
     expect(() => {
       new StaticPool({
         size: numCPU,
+        // @ts-ignore
         task: 1,
       });
     }).toThrowError(TypeError);
@@ -72,7 +74,7 @@ describe("static pool tests", () => {
     const pool = new StaticPool({
       size: numCPU,
       workerData: 10,
-      task: function(n) {
+      task: function (n) {
         return this.workerData * n;
       },
     });
@@ -135,6 +137,7 @@ describe("static pool tests", () => {
       size: numCPU,
       workerData: data,
       task: () => {
+        // @ts-ignore
         return this.workerData;
       },
     });
@@ -232,6 +235,7 @@ describe("dynamic pool tests", () => {
     res = await pool.exec({
       workerData: data,
       task: () => {
+        // @ts-ignore
         return this.workerData;
       },
     });
@@ -262,9 +266,23 @@ describe("dynamic pool tests", () => {
 
     expect(() => {
       pool.exec({
+        // @ts-ignore
         task: 1,
       });
     }).toThrowError(TypeError);
+
+    pool.destroy();
+  });
+
+  test("should param field work", async () => {
+    const pool = new DynamicPool(1);
+
+    const res = await pool.exec({
+      task: (n) => n + 1,
+      param: 10,
+    });
+
+    expect(res).toBe(11);
 
     pool.destroy();
   });
@@ -404,7 +422,7 @@ describe("async task function tests", () => {
   test("should static pool work with async task", async () => {
     const pool = new StaticPool({
       size: 1,
-      task: async function(n) {
+      task: async function (n) {
         return n;
       },
     });
@@ -416,7 +434,7 @@ describe("async task function tests", () => {
   test("should dynamic pool work with async task", async () => {
     const pool = new DynamicPool(1);
     const res = await pool.exec({
-      task: async function() {
+      task: async function () {
         return this.workerData;
       },
       workerData: 1,
@@ -483,5 +501,96 @@ describe("resourceLimits tests", () => {
     } finally {
       pool.destroy();
     }
+  });
+});
+
+describe("task executor tests", () => {
+  test("should static pool set timeout", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task() {
+        while (true);
+      },
+    });
+
+    try {
+      await pool.createExecutor().setTimeout(500).exec();
+    } catch (error) {
+      expect(isTimeoutError(error)).toBe(true);
+    } finally {
+      pool.destroy();
+    }
+  });
+
+  test("should static pool set transferList", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task() {},
+    });
+
+    const buf = new ArrayBuffer(16);
+    expect(buf.byteLength).toBe(16);
+    await pool.createExecutor().setTransferList([buf]).exec();
+    expect(buf.byteLength).toBe(0);
+    pool.destroy();
+  });
+
+  test("should throw when static pool executor run multiple time", async () => {
+    const pool = new StaticPool({
+      size: 2,
+      task: () => {},
+    });
+
+    const executor = pool.createExecutor();
+    await executor.exec();
+    try {
+      await executor.exec();
+    } catch (error) {
+      expect(error).toEqual(new Error("task executor is already called!"));
+    }
+    pool.destroy();
+  });
+
+  test("should dynamic pool set timeout", async () => {
+    const pool = new DynamicPool(1);
+
+    try {
+      await pool
+        .createExecutor(() => {
+          while (true);
+        })
+        .setTimeout(500)
+        .exec();
+    } catch (error) {
+      expect(isTimeoutError(error)).toBe(true);
+    } finally {
+      pool.destroy();
+    }
+  });
+
+  test("should dynamic pool set transferList", async () => {
+    const pool = new DynamicPool(1);
+
+    const buf = new ArrayBuffer(16);
+    expect(buf.byteLength).toBe(16);
+    await pool
+      .createExecutor(() => {})
+      .setTransferList([buf])
+      .exec();
+    expect(buf.byteLength).toBe(0);
+    pool.destroy();
+  });
+
+  test("should throw when dynamic pool executor run multiple time", async () => {
+    const pool = new DynamicPool(2);
+
+    const executor = pool.createExecutor(() => {});
+    await executor.exec();
+    try {
+      await executor.exec();
+    } catch (error) {
+      expect(error).toEqual(new Error("task executor is already called!"));
+    }
+    pool.destroy();
   });
 });

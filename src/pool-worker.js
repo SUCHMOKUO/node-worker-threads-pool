@@ -1,30 +1,44 @@
-const { Worker } = require("worker_threads");
+/**
+ * @typedef {import("../index").TransferList} TransferList
+ */
 
 /**
- * worker in the pool.
+ * @typedef {object} TaskConfig
+ * @property {number} [timeout]
+ * @property {TransferList} [transferList]
  */
-module.exports = class PoolWorker extends Worker {
+
+const { Worker } = require("worker_threads");
+const { PromiseWithTimer } = require("./promise-with-timer");
+
+class PoolWorker extends Worker {
+  /**
+   * @param {ConstructorParameters<typeof Worker>} args
+   */
   constructor(...args) {
     super(...args);
 
-    // working status.
     this.isReady = false;
 
-    this.once("online", () => this.ready());
+    this.once("online", () => this.readyToWork());
   }
 
   /**
-   * start working.
-   * @param { * } param
+   * @param {any} param
+   * @param {TaskConfig} taskConfig
    */
-  work(param) {
+  run(param, taskConfig) {
     this.isReady = false;
-    return new Promise((resolve, reject) => {
+
+    const timeout = taskConfig.timeout ? taskConfig.timeout : 0;
+    const transferList = taskConfig.transferList;
+
+    const taskPromise = new Promise((resolve, reject) => {
       const self = this;
 
       function message(res) {
         self.removeListener("error", error);
-        self.ready();
+        self.readyToWork();
         resolve(res);
       }
 
@@ -35,15 +49,16 @@ module.exports = class PoolWorker extends Worker {
 
       this.once("message", message);
       this.once("error", error);
-      this.postMessage(param);
+      this.postMessage(param, transferList);
     });
+
+    return new PromiseWithTimer(taskPromise, timeout).startRace();
   }
 
-  /**
-   * ready to work.
-   */
-  ready() {
+  readyToWork() {
     this.isReady = true;
     this.emit("ready", this);
   }
-};
+}
+
+module.exports.PoolWorker = PoolWorker;

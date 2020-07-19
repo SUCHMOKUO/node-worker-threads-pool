@@ -6,7 +6,7 @@ class TimeoutError extends Error {
 }
 
 /**
- * @param { Error } err
+ * @param {Error} err
  */
 function isTimeoutError(err) {
   return err instanceof TimeoutError;
@@ -14,8 +14,8 @@ function isTimeoutError(err) {
 
 class PromiseWithTimer {
   /**
-   * @param { Promise } p
-   * @param { number } timeout timeout in ms. 0 stands for no limit.
+   * @param {Promise} p
+   * @param {number} timeout
    */
   constructor(p, timeout) {
     this._p = p;
@@ -29,11 +29,7 @@ class PromiseWithTimer {
     });
   }
 
-  /**
-   * start race of promise and timer.
-   * it throws an error when timeout before the promise return.
-   */
-  async start() {
+  async startRace() {
     if (this._timeout <= 0) {
       return await this._p;
     }

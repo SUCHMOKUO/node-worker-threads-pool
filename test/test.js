@@ -35,7 +35,7 @@ describe("pool tests", () => {
     pool.destroy();
     try {
       // @ts-ignore
-      await pool.dispatchTask();
+      await pool.runTask();
     } catch (err) {
       expect(err.message).toBe(
         "This pool is deprecated! Please use a new one."
@@ -387,6 +387,33 @@ describe("timeout tests", () => {
 
     const res = await pool.exec(null, 1000);
     expect(res).toBe(1);
+  });
+
+  test("should static pool recover after timeout", async () => {
+    pool = new StaticPool({
+      size: 1,
+      task() {
+        let i = 1 << 30;
+        while (i--);
+        return 0;
+      },
+    });
+
+    let timeoutError;
+
+    try {
+      await pool.exec(undefined, 1);
+    } catch (error) {
+      if (isTimeoutError(error)) {
+        timeoutError = error;
+        const result = await pool.exec();
+        expect(result).toBe(0);
+      } else {
+        throw error;
+      }
+    }
+
+    expect(timeoutError).not.toBeUndefined();
   });
 
   test("test dynamic pool with timeout", async () => {

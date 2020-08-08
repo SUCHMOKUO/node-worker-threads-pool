@@ -50,7 +50,7 @@ class BaseTaskExecutor {
       throw new Error("task executor is already called!");
     }
     this._called = true;
-    return await this._pool.dispatchTask(param, this._taskConfig);
+    return await this._pool.runTask(param, this._taskConfig);
   }
 }
 

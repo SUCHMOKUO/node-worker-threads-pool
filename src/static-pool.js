@@ -3,7 +3,6 @@ const { PoolWorker } = require("./pool-worker");
 const { StaticTaskExecutor } = require("./task-executor");
 const { createCode } = require("./create-code");
 
-const fnReg = /^task[^]*([^]*)[^]*{[^]*}$/;
 /**
  * @param {Function} fn
  */
@@ -78,7 +77,7 @@ class StaticPool extends Pool {
     if (typeof param === "function") {
       throw new TypeError('"param" can not be a function!');
     }
-    return this.dispatchTask(param, { timeout });
+    return this.runTask(param, { timeout });
   }
 
   createExecutor() {

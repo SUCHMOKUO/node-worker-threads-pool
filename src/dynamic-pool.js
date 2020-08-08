@@ -67,7 +67,7 @@ class DynamicPool extends Pool {
       param,
       workerData,
     };
-    return this.dispatchTask(workerParam, { timeout });
+    return this.runTask(workerParam, { timeout });
   }
 
   /**

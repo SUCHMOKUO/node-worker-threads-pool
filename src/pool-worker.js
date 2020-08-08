@@ -18,7 +18,7 @@ class PoolWorker extends Worker {
   constructor(...args) {
     super(...args);
 
-    this.isReady = false;
+    this.ready = false;
 
     this.once("online", () => this.readyToWork());
   }
@@ -28,7 +28,7 @@ class PoolWorker extends Worker {
    * @param {TaskConfig} taskConfig
    */
   run(param, taskConfig) {
-    this.isReady = false;
+    this.ready = false;
 
     const timeout = taskConfig.timeout ? taskConfig.timeout : 0;
     const transferList = taskConfig.transferList;
@@ -56,8 +56,21 @@ class PoolWorker extends Worker {
   }
 
   readyToWork() {
-    this.isReady = true;
+    this.ready = true;
     this.emit("ready", this);
+  }
+
+  /**
+   * @override
+   */
+  terminate() {
+    this.once("exit", () => {
+      setImmediate(() => {
+        this.removeAllListeners();
+      });
+    });
+
+    return super.terminate();
   }
 }
 

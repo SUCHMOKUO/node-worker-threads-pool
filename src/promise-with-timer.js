@@ -21,11 +21,12 @@ class PromiseWithTimer {
     this._p = p;
     this._timeout = timeout;
     this._timerID = null;
+    this._timeoutSymbol = Symbol("timeoutSymbol");
   }
 
-  _timer() {
+  _createTimer() {
     return new Promise((resolve) => {
-      this._timerID = setTimeout(resolve, this._timeout, this._timer);
+      this._timerID = setTimeout(resolve, this._timeout, this._timeoutSymbol);
     });
   }
 
@@ -33,13 +34,15 @@ class PromiseWithTimer {
     if (this._timeout <= 0) {
       return await this._p;
     }
-    const res = await Promise.race([this._p, this._timer()]);
-    if (res === this._timer) {
-      // timeout.
+
+    const result = await Promise.race([this._p, this._createTimer()]);
+
+    if (result === this._timeoutSymbol) {
       throw new TimeoutError("timeout");
     }
+
     clearTimeout(this._timerID);
-    return res;
+    return result;
   }
 }
 

@@ -14,12 +14,15 @@ class Pool extends EventEmitter {
    */
   constructor(size) {
     super();
+
     if (typeof size !== "number") {
       throw new TypeError('"size" must be the type of number!');
     }
+
     if (Number.isNaN(size)) {
       throw new Error('"size" must not be NaN!');
     }
+
     if (size < 1) {
       throw new RangeError('"size" must not be lower than 1!');
     }
@@ -28,7 +31,7 @@ class Pool extends EventEmitter {
     this._size = size;
 
     /** @private */
-    this._isDeprecated = false;
+    this._deprecated = false;
 
     /**
      * @private
@@ -45,7 +48,7 @@ class Pool extends EventEmitter {
      * @private
      * @type {TaskContainer[]}
      */
-    this._queue = [];
+    this._taskQueue = [];
 
     this._addEventHandlers();
   }
@@ -54,20 +57,8 @@ class Pool extends EventEmitter {
    * @private
    */
   _addEventHandlers() {
-    this.on("worker-ready", (/** @type {PoolWorker} */ worker) => {
-      const taskContainer = this._queue.shift();
-      if (taskContainer) {
-        const { param, taskConfig, resolve, reject } = taskContainer;
-        worker
-          .run(param, taskConfig)
-          .then(resolve)
-          .catch((err) => {
-            if (isTimeoutError(err)) {
-              worker.terminate();
-            }
-            reject(err);
-          });
-      }
+    this.on("worker-ready", (worker) => {
+      this._processTask(worker);
     });
   }
 
@@ -75,27 +66,25 @@ class Pool extends EventEmitter {
    * @private
    * @param {PoolWorker} worker
    */
-  _addWorkerHooks(worker) {
+  _addWorkerLifecycleHandlers(worker) {
     worker.on("ready", (worker) => this.emit("worker-ready", worker));
 
     worker.once("exit", (code) => {
-      if (this._isDeprecated || code === 0) {
+      if (this._deprecated || code === 0) {
         return;
       }
-      this._replaceBrokenWorker(worker);
-      worker.terminate();
-      worker.removeAllListeners();
+      this._replaceWorker(worker);
     });
   }
 
   /**
    * @private
-   * @param {() => PoolWorker} workerGen
+   * @param {() => PoolWorker} getWorker
    */
-  _setWorkerGen(workerGen) {
+  _setWorkerCreator(getWorker) {
     this._createWorker = () => {
-      const worker = workerGen();
-      this._addWorkerHooks(worker);
+      const worker = getWorker();
+      this._addWorkerLifecycleHandlers(worker);
       return worker;
     };
   }
@@ -104,19 +93,57 @@ class Pool extends EventEmitter {
    * @param {PoolWorker} worker
    * @private
    */
-  _replaceBrokenWorker(worker) {
+  _replaceWorker(worker) {
     const i = this._workers.indexOf(worker);
-    if (i > 0) {
+
+    if (i >= 0) {
       this._workers[i] = this._createWorker();
     }
   }
 
   /**
-   * @param {() => PoolWorker} workerGen
+   * @returns {PoolWorker | null}
    */
-  fill(workerGen) {
-    this._setWorkerGen(workerGen);
+  _getIdleWorker() {
+    const worker = this._workers.find((worker) => worker.ready);
+
+    return worker ? worker : null;
+  }
+
+  /**
+   * @param {PoolWorker} worker
+   * @private
+   */
+  _processTask(worker) {
+    const task = this._taskQueue.shift();
+
+    if (!task) {
+      return;
+    }
+
+    const { param, resolve, reject, taskConfig } = task;
+
+    worker
+      .run(param, taskConfig)
+      .then(resolve)
+      .catch((error) => {
+        if (isTimeoutError(error)) {
+          worker.terminate();
+        }
+        reject(error);
+      });
+  }
+
+  /**
+   * @param {() => PoolWorker} getWorker
+   */
+  fill(getWorker) {
+    if (!this._createWorker) {
+      this._setWorkerCreator(getWorker);
+    }
+
     const size = this._size;
+
     for (let i = 0; i < size; i++) {
       this._workers.push(this._createWorker());
     }
@@ -126,37 +153,25 @@ class Pool extends EventEmitter {
    * @param {any} param
    * @param {TaskConfig} taskConfig
    */
-  async dispatchTask(param, taskConfig) {
-    if (this._isDeprecated) {
+  runTask(param, taskConfig) {
+    if (this._deprecated) {
       throw new Error("This pool is deprecated! Please use a new one.");
     }
 
-    const worker = this._workers.find((worker) => worker.isReady);
-
-    if (worker) {
-      try {
-        return await worker.run(param, taskConfig);
-      } catch (err) {
-        if (isTimeoutError(err)) {
-          worker.terminate();
-        }
-        throw err;
-      }
-    }
-
     return new Promise((resolve, reject) => {
-      const taskContainer = new TaskContainer(
-        param,
-        resolve,
-        reject,
-        taskConfig
-      );
-      this._queue.push(taskContainer);
+      const task = new TaskContainer(param, resolve, reject, taskConfig);
+
+      this._taskQueue.push(task);
+      const worker = this._getIdleWorker();
+
+      if (worker) {
+        this._processTask(worker);
+      }
     });
   }
 
   async destroy() {
-    this._isDeprecated = true;
+    this._deprecated = true;
     this.removeAllListeners();
     const workers = this._workers;
     this._workers = null;

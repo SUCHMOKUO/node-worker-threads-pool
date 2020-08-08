@@ -17,6 +17,7 @@ jobs:
 
       - name: Test and publish coverage
         run: |
+          npm ci
           npm install coveralls --save-dev
           jest --coverage --coverageReporters=text-lcov | coveralls
 

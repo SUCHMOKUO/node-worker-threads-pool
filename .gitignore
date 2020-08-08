@@ -1,7 +1,6 @@
 .DS_Store
 !.gitignore
 !.npmignore
-!.travis.yml
 node_modules/
 package-lock.json
 coverage/

@@ -19,7 +19,7 @@ jobs:
         run: |
           npm install
           npm install coveralls --save-dev
-          jest --coverage --coverageReporters=text-lcov | coveralls
+          npx jest --coverage --coverageReporters=text-lcov | npx coveralls
 
   npm-publish:
     needs: test

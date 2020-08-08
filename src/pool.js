@@ -95,10 +95,7 @@ class Pool extends EventEmitter {
    */
   _replaceWorker(worker) {
     const i = this._workers.indexOf(worker);
-
-    if (i >= 0) {
-      this._workers[i] = this._createWorker();
-    }
+    this._workers[i] = this._createWorker();
   }
 
   /**
@@ -138,9 +135,7 @@ class Pool extends EventEmitter {
    * @param {() => PoolWorker} getWorker
    */
   fill(getWorker) {
-    if (!this._createWorker) {
-      this._setWorkerCreator(getWorker);
-    }
+    this._setWorkerCreator(getWorker);
 
     const size = this._size;
 

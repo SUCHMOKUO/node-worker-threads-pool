@@ -15,11 +15,15 @@ jobs:
         with:
           node-version: "14"
 
-      - name: Test and publish coverage
+      - name: Test
         run: |
           npm install
-          npm install coveralls --save-dev
-          npx jest --coverage --coverageReporters=text-lcov | npx coveralls
+          npm test
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   npm-publish:
     needs: test

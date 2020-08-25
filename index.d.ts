@@ -50,7 +50,7 @@ export interface StaticTaskExecutor<ParamType, ResulType>
 /**
  * Threads pool with static task.
  */
-export declare class StaticPool<ParamType, ResultType> {
+export declare class StaticPool<ParamType, ResultType, WorkerData = any> {
   constructor(
     opt: {
       /** number of workers */
@@ -60,7 +60,7 @@ export declare class StaticPool<ParamType, ResultType> {
       task: string | TaskFunc<ParamType, ResultType>;
 
       /** data to pass into workers */
-      workerData?: any;
+      workerData?: WorkerData;
     } & CommonWorkerSettings
   );
 
@@ -104,7 +104,7 @@ export declare class DynamicPool {
    * Choose a idle worker to execute the function
    * with context provided.
    */
-  exec<ParamType = any, ResultType = any>(param: {
+  exec<ParamType = any, ResultType = any, WorkerData = any>(param: {
     /** Function to be executed. */
     task: TaskFunc<ParamType, ResultType>;
 
@@ -115,7 +115,7 @@ export declare class DynamicPool {
      * Data to pass into workers.
      * @deprecated since version 1.4.0. Please use parameter instead.
      */
-    workerData?: any;
+    workerData?: WorkerData;
 
     timeout?: number;
   }): Promise<ResultType>;

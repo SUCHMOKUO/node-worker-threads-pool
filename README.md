@@ -348,6 +348,35 @@ try {
 }
 ```
 
+## Integration with Webpack
+
+If you are using webpack in your project and want to import third-party libraries in task function, please use `this.require`:
+
+```js
+const staticPool = new StaticPool({
+  size: 4,
+  task() {
+    const lib = this.require("lib");
+    // ...
+  },
+});
+```
+
+```js
+const dynamicPool = new DynamicPool(4);
+
+dynamicPool
+  .exec({
+    task() {
+      const lib = this.require("lib");
+      // ...
+    },
+  })
+  .then((result) => {
+    // ...
+  });
+```
+
 [cloneable data]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
 [resourcelimits]: https://nodejs.org/api/worker_threads.html#worker_threads_worker_resourcelimits
 [share_env]: https://nodejs.org/dist/latest-v14.x/docs/api/worker_threads.html#worker_threads_worker_share_env

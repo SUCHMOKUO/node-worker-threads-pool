@@ -24,7 +24,7 @@ const script = `
   parentPort.on('message', async ({ code, workerData, param }) => {
     this.workerData = workerData;
     const task = vm.runInThisContext(code);
-    const container = { task, workerData };
+    const container = { task, workerData, require };
     const result = await container.task(param);
     parentPort.postMessage(result);
   });

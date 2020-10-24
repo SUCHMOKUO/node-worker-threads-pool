@@ -13,6 +13,7 @@ function createScript(fn) {
     this.workerData = workerData;
     const container = {
       workerData,
+      require,
       task: ${createCode(fn)}
     };
     

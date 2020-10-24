@@ -4,11 +4,16 @@ import type { MessagePort } from "worker_threads";
 
 type TransferList = Parameters<typeof MessagePort.prototype.postMessage>[1];
 
-type TaskFunc<ParamType, ResultType> =
-  | (() => Promise<ResultType>)
-  | (() => ResultType)
-  | ((param: ParamType) => Promise<ResultType>)
-  | ((param: ParamType) => ResultType);
+type TaskFuncThis<WorkerData = any> = {
+  workerData: WorkerData;
+  require: NodeRequire;
+};
+
+type TaskFunc<ParamType, ResultType, WorkerData = any> =
+  | ((this: TaskFuncThis<WorkerData>) => Promise<ResultType>)
+  | ((this: TaskFuncThis<WorkerData>) => ResultType)
+  | ((this: TaskFuncThis<WorkerData>, param: ParamType) => Promise<ResultType>)
+  | ((this: TaskFuncThis<WorkerData>, param: ParamType) => ResultType);
 
 type CommonWorkerSettings = {
   /**

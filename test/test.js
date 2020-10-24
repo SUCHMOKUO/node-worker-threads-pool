@@ -621,3 +621,69 @@ describe("task executor tests", () => {
     pool.destroy();
   });
 });
+
+describe("require function tests", () => {
+  test("should static pool require module using this.require", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task() {
+        const os = this.require("os");
+        return os.cpus().length;
+      },
+    });
+
+    const cpus = await pool.exec();
+
+    expect(cpus).toBeGreaterThan(0);
+
+    pool.destroy();
+  });
+
+  test("should static pool require module using this.require when using arrow function task", async () => {
+    const pool = new StaticPool({
+      size: 1,
+      task: () => {
+        // @ts-ignore
+        const os = this.require("os");
+        return os.cpus().length;
+      },
+    });
+
+    const cpus = await pool.exec();
+
+    expect(cpus).toBeGreaterThan(0);
+
+    pool.destroy();
+  });
+
+  test("should dynamic pool require module using this.require", async () => {
+    const pool = new DynamicPool(2);
+
+    const cpus = await pool
+      .createExecutor(function () {
+        const os = this.require("os");
+        return os.cpus().length;
+      })
+      .exec();
+
+    expect(cpus).toBeGreaterThan(0);
+
+    pool.destroy();
+  });
+
+  test("should dynamic pool require module using this.require when using arrow function task", async () => {
+    const pool = new DynamicPool(2);
+
+    const cpus = await pool
+      .createExecutor(() => {
+        // @ts-ignore
+        const os = this.require("os");
+        return os.cpus().length;
+      })
+      .exec();
+
+    expect(cpus).toBeGreaterThan(0);
+
+    pool.destroy();
+  });
+});

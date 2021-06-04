@@ -5,6 +5,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
+    "prepare": "husky install",
     "test": "jest --coverage"
   },
   "repository": {
@@ -31,11 +32,11 @@
   "homepage": "https://github.com/SUCHMOKUO/node-worker-threads-pool#readme",
   "dependencies": {},
   "devDependencies": {
-    "@types/jest": "^26.0.5",
-    "@types/node": "^14.0.23",
-    "husky": "^4.2.5",
-    "jest": "^24.9.0",
-    "prettier": "^2.0.5",
-    "pretty-quick": "^2.0.1"
+    "@types/jest": "^26.0.23",
+    "@types/node": "^14.17.2",
+    "husky": "^6.0.0",
+    "jest": "^27.0.4",
+    "prettier": "^2.3.0",
+    "pretty-quick": "^3.1.0"
   }
 }

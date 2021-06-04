@@ -1,6 +1,6 @@
 # node-worker-threads-pool
 
-[![Actions Status](https://github.com/SUCHMOKUO/node-worker-threads-pool/workflows/Workflow/badge.svg)](https://github.com/SUCHMOKUO/node-worker-threads-pool/actions)
+[![Actions Status](https://github.com/SUCHMOKUO/node-worker-threads-pool/workflows/CI/badge.svg)](https://github.com/SUCHMOKUO/node-worker-threads-pool/actions)
 [![Coverage Status](https://coveralls.io/repos/github/SUCHMOKUO/node-worker-threads-pool/badge.svg?branch=master)](https://coveralls.io/github/SUCHMOKUO/node-worker-threads-pool?branch=master)
 [![](https://img.shields.io/npm/v/node-worker-threads-pool.svg)](https://www.npmjs.com/package/node-worker-threads-pool)
 ![](https://img.shields.io/badge/dependencies-none-brightgreen.svg)

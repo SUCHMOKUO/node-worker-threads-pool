@@ -2,3 +2,4 @@ test/
 .*
 package-lock.json
 coverage/
+yarn.lock

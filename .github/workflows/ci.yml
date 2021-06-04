@@ -1,7 +1,10 @@
-name: Workflow
+name: CI
 
 on:
   push:
+    branches:
+      - master
+  pull_request:
     branches:
       - master
 
@@ -21,11 +24,13 @@ jobs:
           npm test
 
       - name: Coveralls
+        if: github.event_name == 'push'
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   npm-publish:
+    if: github.event_name == 'push'
     needs: test
     runs-on: ubuntu-latest
     steps:

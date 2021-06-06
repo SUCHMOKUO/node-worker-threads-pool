@@ -1,5 +1,5 @@
-const { DynamicPool, StaticPool } = require("..");
-const assert = require("assert");
+const { DynamicPool, StaticPool } = require('../dist');
+const assert = require('assert');
 
 function expect(val) {
   return {

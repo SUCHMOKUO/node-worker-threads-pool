@@ -2,11 +2,15 @@
   "name": "node-worker-threads-pool",
   "version": "1.4.3",
   "description": "Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await.",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "prepare": "husky install",
-    "test": "jest --coverage"
+    "build": "tsc",
+    "test": "jest --coverage",
+    "pretest": "yarn build"
   },
   "repository": {
     "type": "git",
@@ -36,7 +40,8 @@
     "@types/node": "^14.17.2",
     "husky": "^6.0.0",
     "jest": "^27.0.4",
-    "prettier": "^2.3.0",
-    "pretty-quick": "^3.1.0"
+    "prettier": "^2.3.1",
+    "pretty-quick": "^3.1.0",
+    "typescript": "^4.3.2"
   }
 }

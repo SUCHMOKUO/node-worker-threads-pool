@@ -3,3 +3,5 @@ test/
 package-lock.json
 coverage/
 yarn.lock
+src/
+tsconfig.json

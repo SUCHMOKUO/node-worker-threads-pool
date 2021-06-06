@@ -4,7 +4,7 @@ function add(a, b) {
   return a + b;
 }
 
-parentPort.on('message', msg => {
+parentPort.on('message', (msg) => {
   if (typeof msg !== 'number') {
     throw new Error('param must be a number.');
   }

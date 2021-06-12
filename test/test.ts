@@ -1,8 +1,10 @@
-const { Pool } = require('../dist/pool');
-const { DynamicPool, StaticPool, isTimeoutError } = require('../dist');
-const os = require('os');
-const path = require('path');
-const numCPU = os.cpus().length;
+// @ts-nocheck
+import { Pool } from '../dist/pool';
+import { DynamicPool, StaticPool, isTimeoutError } from '../dist';
+import os from 'os';
+import path from 'path';
+
+const CPU_NUM = 4;
 
 function wait(t) {
   return new Promise((resolve) => {
@@ -11,31 +13,29 @@ function wait(t) {
 }
 
 describe('pool tests', () => {
-  test('should throw error if size is not number', () => {
+  it('should throw error if size is not number', () => {
     expect(() => {
-      // @ts-ignore
-      new Pool('a');
+      new Pool('a' as unknown as number);
     }).toThrowError(TypeError);
   });
 
-  test('should throw error if size is NaN', () => {
+  it('should throw error if size is NaN', () => {
     expect(() => {
       new Pool(NaN);
     }).toThrowError('"size" must not be NaN!');
   });
 
-  test('should throw error if size < 1', () => {
+  it('should throw error if size < 1', () => {
     expect(() => {
       new Pool(0);
     }).toThrowError(RangeError);
   });
 
-  test('should throw error if pool is deprecated', async () => {
+  it('should throw error if pool is deprecated', async () => {
     const pool = new Pool(5);
     pool.destroy();
     try {
-      // @ts-ignore
-      await pool.runTask();
+      await pool.runTask(null, {});
     } catch (err) {
       expect(err.message).toBe('This pool is deprecated! Please use a new one.');
     }
@@ -43,34 +43,39 @@ describe('pool tests', () => {
 });
 
 describe('static pool tests', () => {
-  test('should throw error if task is not string or function', () => {
+  it('should throw error if task is not string or function', () => {
     expect(() => {
       new StaticPool({
-        size: numCPU,
-        // @ts-ignore
-        task: 1,
+        size: CPU_NUM,
+        task: 1 as unknown as string,
       });
     }).toThrowError(TypeError);
   });
 
-  test('should throw error if param is function', async () => {
+  it('should throw error if param is function', async () => {
     const pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       task(n) {
         return n;
       },
     });
 
-    await expect(pool.exec(() => {})).rejects.toThrowError(TypeError);
+    expect.assertions(1);
+
+    try {
+      await pool.exec(() => {});
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError);
+    }
 
     pool.destroy();
   });
 
-  test('test task function with workerData', async () => {
+  it('test task function with workerData', async () => {
     const pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       workerData: 10,
-      task: function (n) {
+      task: function (n: number) {
         return this.workerData * n;
       },
     });
@@ -85,12 +90,12 @@ describe('static pool tests', () => {
     pool.destroy();
   });
 
-  test('test worker file', async () => {
+  it('test worker file', async () => {
     const workerData = 100;
 
     const pool = new StaticPool({
       task: path.resolve(__dirname, 'add.js'),
-      size: numCPU,
+      size: CPU_NUM,
       workerData,
     });
 
@@ -103,10 +108,10 @@ describe('static pool tests', () => {
     pool.destroy();
   });
 
-  test('test no param', async () => {
+  it('test no param', async () => {
     const pool = new StaticPool({
-      task: (param) => param,
-      size: numCPU,
+      task: () => undefined,
+      size: CPU_NUM,
     });
 
     expect(await pool.exec()).toBe(undefined);
@@ -114,12 +119,12 @@ describe('static pool tests', () => {
     pool.destroy();
   });
 
-  test("test 'this' reference", async () => {
+  it("test 'this' reference", async () => {
     const data = 10;
     let pool, res;
 
     pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       workerData: data,
       task() {
         return this.workerData;
@@ -130,7 +135,7 @@ describe('static pool tests', () => {
     pool.destroy();
 
     pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       workerData: data,
       task: () => {
         // @ts-ignore
@@ -142,14 +147,14 @@ describe('static pool tests', () => {
     pool.destroy();
   });
 
-  test("test 'this' reference under strict mode", async () => {
+  it("test 'this' reference under strict mode", async () => {
     function task() {
       'use strict';
       return this.workerData;
     }
 
     const pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       task,
       workerData: 10,
     });
@@ -177,8 +182,8 @@ function div10() {
 }
 
 describe('dynamic pool tests', () => {
-  test('test basic function', async () => {
-    const pool = new DynamicPool(numCPU);
+  it('test basic function', async () => {
+    const pool = new DynamicPool(CPU_NUM);
 
     const execArr = [];
     execArr.push(
@@ -215,8 +220,8 @@ describe('dynamic pool tests', () => {
     pool.destroy();
   });
 
-  test("test 'this' reference", async () => {
-    const pool = new DynamicPool(numCPU);
+  it("test 'this' reference", async () => {
+    const pool = new DynamicPool(CPU_NUM);
     const data = 10;
 
     let res = await pool.exec({
@@ -241,13 +246,13 @@ describe('dynamic pool tests', () => {
     pool.destroy();
   });
 
-  test("test 'this' reference under strict mode", async () => {
+  it("test 'this' reference under strict mode", async () => {
     function task() {
       'use strict';
       return this.workerData;
     }
 
-    const pool = new DynamicPool(numCPU);
+    const pool = new DynamicPool(CPU_NUM);
     const res = await pool.exec({
       task,
       workerData: 10,
@@ -257,8 +262,8 @@ describe('dynamic pool tests', () => {
     pool.destroy();
   });
 
-  test('should throw error if task is not function', async () => {
-    const pool = new DynamicPool(numCPU);
+  it('should throw error if task is not function', async () => {
+    const pool = new DynamicPool(CPU_NUM);
 
     await expect(
       pool.exec({
@@ -270,7 +275,7 @@ describe('dynamic pool tests', () => {
     pool.destroy();
   });
 
-  test('should param field work', async () => {
+  it('should param field work', async () => {
     const pool = new DynamicPool(1);
 
     const res = await pool.exec({
@@ -285,7 +290,7 @@ describe('dynamic pool tests', () => {
 });
 
 describe('error tests', () => {
-  test('error static pool test', async () => {
+  it('error static pool test', async () => {
     const pool = new StaticPool({
       task: (n) => {
         if (n < 0) {
@@ -293,10 +298,10 @@ describe('error tests', () => {
         }
         return n + 1;
       },
-      size: numCPU,
+      size: CPU_NUM,
     });
 
-    for (let i = 0; i < numCPU; i++) {
+    for (let i = 0; i < CPU_NUM; i++) {
       try {
         await pool.exec(-1);
       } catch (err) {
@@ -304,7 +309,7 @@ describe('error tests', () => {
       }
     }
 
-    for (let i = 0; i < numCPU; i++) {
+    for (let i = 0; i < CPU_NUM; i++) {
       const res = await pool.exec(i);
       expect(res).toBe(i + 1);
     }
@@ -312,10 +317,10 @@ describe('error tests', () => {
     pool.destroy();
   });
 
-  test('test dynamic pool error', async () => {
-    const pool = new DynamicPool(numCPU);
+  it('test dynamic pool error', async () => {
+    const pool = new DynamicPool(CPU_NUM);
 
-    for (let i = 0; i < numCPU; i++) {
+    for (let i = 0; i < CPU_NUM; i++) {
       try {
         await pool.exec({
           task() {
@@ -331,7 +336,7 @@ describe('error tests', () => {
       }
     }
 
-    for (let i = 0; i < numCPU; i++) {
+    for (let i = 0; i < CPU_NUM; i++) {
       try {
         const res = await pool.exec({
           task() {
@@ -353,12 +358,12 @@ describe('error tests', () => {
 });
 
 describe('timeout tests', () => {
-  let pool;
+  let pool: StaticPool;
   afterEach(() => pool.destroy());
 
-  test('test static pool with timeout', async () => {
+  it('test static pool with timeout', async () => {
     pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       task() {
         while (true);
       },
@@ -367,15 +372,15 @@ describe('timeout tests', () => {
     await wait(500);
 
     try {
-      await pool.exec(null, 1000);
+      await pool.createExecutor().setTimeout(1000).exec();
     } catch (err) {
       expect(isTimeoutError(err)).toBe(true);
     }
   });
 
-  test('should static pool pass within timeout', async () => {
+  it('should static pool pass within timeout', async () => {
     pool = new StaticPool({
-      size: numCPU,
+      size: CPU_NUM,
       task() {
         return 1;
       },
@@ -385,7 +390,7 @@ describe('timeout tests', () => {
     expect(res).toBe(1);
   });
 
-  test('should static pool recover after timeout', async () => {
+  it('should static pool recover after timeout', async () => {
     pool = new StaticPool({
       size: 1,
       task() {
@@ -395,25 +400,25 @@ describe('timeout tests', () => {
       },
     });
 
-    let timeoutError;
+    let timeoutError: Error;
+
+    expect.assertions(2);
 
     try {
-      await pool.exec(undefined, 1);
+      await pool.createExecutor().setTimeout(1).exec();
     } catch (error) {
       if (isTimeoutError(error)) {
         timeoutError = error;
         const result = await pool.exec();
         expect(result).toBe(0);
-      } else {
-        throw error;
       }
     }
 
     expect(timeoutError).not.toBeUndefined();
   });
 
-  test('test dynamic pool with timeout', async () => {
-    pool = new DynamicPool(numCPU);
+  it('test dynamic pool with timeout', async () => {
+    pool = new DynamicPool(CPU_NUM);
 
     try {
       await pool.exec({
@@ -427,8 +432,8 @@ describe('timeout tests', () => {
     }
   });
 
-  test('should dynamic pool pass within timeout', async () => {
-    pool = new DynamicPool(numCPU);
+  it('should dynamic pool pass within timeout', async () => {
+    pool = new DynamicPool(CPU_NUM);
 
     const res = await pool.exec({
       task() {
@@ -442,7 +447,7 @@ describe('timeout tests', () => {
 });
 
 describe('async task function tests', () => {
-  test('should static pool work with async task', async () => {
+  it('should static pool work with async task', async () => {
     const pool = new StaticPool({
       size: 1,
       task: async function (n) {
@@ -454,7 +459,7 @@ describe('async task function tests', () => {
     pool.destroy();
   });
 
-  test('should dynamic pool work with async task', async () => {
+  it('should dynamic pool work with async task', async () => {
     const pool = new DynamicPool(1);
     const res = await pool.exec({
       task: async function () {
@@ -471,7 +476,7 @@ describe('SHARE_ENV tests', () => {
   const { promisify } = require('util');
   const exec = promisify(require('child_process').exec);
 
-  test('should pass', async () => {
+  it('should pass', async () => {
     await exec('node ./test/shareEnv.js');
   });
 });
@@ -484,7 +489,7 @@ describe('resourceLimits tests', () => {
       pool.once('worker-ready', (worker) => {
         const stackSizeMb = worker.resourceLimits.stackSizeMb;
         if (stackSizeMb === STACK_SIZE_MB) {
-          resolve();
+          resolve(undefined);
         } else {
           reject(`stackSizeMb is ${stackSizeMb}`);
         }
@@ -492,7 +497,7 @@ describe('resourceLimits tests', () => {
     });
   }
 
-  test('should static pool created with resourceLimits', async () => {
+  it('should static pool created with resourceLimits', async () => {
     const pool = new StaticPool({
       size: 1,
       task() {},
@@ -510,7 +515,7 @@ describe('resourceLimits tests', () => {
     }
   });
 
-  test('should dynamic pool created with resourceLimits', async () => {
+  it('should dynamic pool created with resourceLimits', async () => {
     const pool = new DynamicPool(1, {
       resourceLimits: {
         stackSizeMb: STACK_SIZE_MB,
@@ -528,7 +533,7 @@ describe('resourceLimits tests', () => {
 });
 
 describe('task executor tests', () => {
-  test('should static pool set timeout', async () => {
+  it('should static pool set timeout', async () => {
     const pool = new StaticPool({
       size: 1,
       task() {
@@ -545,7 +550,7 @@ describe('task executor tests', () => {
     }
   });
 
-  test('should static pool set transferList', async () => {
+  it('should static pool set transferList', async () => {
     const pool = new StaticPool({
       size: 1,
       task() {},
@@ -558,7 +563,7 @@ describe('task executor tests', () => {
     pool.destroy();
   });
 
-  test('should throw when static pool executor run multiple time', async () => {
+  it('should throw when static pool executor run multiple time', async () => {
     const pool = new StaticPool({
       size: 2,
       task: () => {},
@@ -574,7 +579,7 @@ describe('task executor tests', () => {
     pool.destroy();
   });
 
-  test('should dynamic pool set timeout', async () => {
+  it('should dynamic pool set timeout', async () => {
     const pool = new DynamicPool(1);
 
     try {
@@ -591,7 +596,7 @@ describe('task executor tests', () => {
     }
   });
 
-  test('should dynamic pool set transferList', async () => {
+  it('should dynamic pool set transferList', async () => {
     const pool = new DynamicPool(1);
 
     const buf = new ArrayBuffer(16);
@@ -604,7 +609,7 @@ describe('task executor tests', () => {
     pool.destroy();
   });
 
-  test('should throw when dynamic pool executor run multiple time', async () => {
+  it('should throw when dynamic pool executor run multiple time', async () => {
     const pool = new DynamicPool(2);
 
     const executor = pool.createExecutor(() => {});
@@ -619,7 +624,7 @@ describe('task executor tests', () => {
 });
 
 describe('require function tests', () => {
-  test('should static pool require module using this.require', async () => {
+  it('should static pool require module using this.require', async () => {
     const pool = new StaticPool({
       size: 1,
       task() {
@@ -635,7 +640,7 @@ describe('require function tests', () => {
     pool.destroy();
   });
 
-  test('should static pool require module using this.require when using arrow function task', async () => {
+  it('should static pool require module using this.require when using arrow function task', async () => {
     const pool = new StaticPool({
       size: 1,
       task: () => {
@@ -652,7 +657,7 @@ describe('require function tests', () => {
     pool.destroy();
   });
 
-  test('should dynamic pool require module using this.require', async () => {
+  it('should dynamic pool require module using this.require', async () => {
     const pool = new DynamicPool(2);
 
     const cpus = await pool
@@ -667,7 +672,7 @@ describe('require function tests', () => {
     pool.destroy();
   });
 
-  test('should dynamic pool require module using this.require when using arrow function task', async () => {
+  it('should dynamic pool require module using this.require when using arrow function task', async () => {
     const pool = new DynamicPool(2);
 
     const cpus = await pool

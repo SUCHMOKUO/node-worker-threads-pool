@@ -3,7 +3,7 @@ import { Pool } from './pool';
 import { PoolWorker } from './poolWorker';
 import { DynamicTaskExecutor } from './taskExecutor';
 import { createFunctionString } from './utils';
-import { CommonWorkerSettings, TaskFunc } from './@types/index';
+import { CommonWorkerSettings, TaskFunc } from './types';
 
 export interface DynamicPoolExecOptions<TParam, TResult, TWorkerData = any> {
   /** Function to be executed. */
@@ -24,6 +24,16 @@ export interface DynamicPoolExecOptions<TParam, TResult, TWorkerData = any> {
 const script = `
   const vm = require('vm');
   const { parentPort } = require('worker_threads');
+
+  function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+  }
 
   process.once("unhandledRejection", (err) => {
     throw err;

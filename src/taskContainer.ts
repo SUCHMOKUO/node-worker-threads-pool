@@ -1,4 +1,4 @@
-import { TransferList } from './@types/index';
+import { TransferList } from './types';
 
 type ResolveFunc = (value: any) => void;
 type RejectFunc = (reason: any) => void;

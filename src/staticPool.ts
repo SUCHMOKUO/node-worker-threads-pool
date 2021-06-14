@@ -1,9 +1,9 @@
 import { SHARE_ENV } from 'worker_threads';
 import { Pool } from './pool';
 import { PoolWorker } from './poolWorker';
-import { StaticTaskExecutor } from './taskExecutor';
+import { TaskExecutor } from './taskExecutor';
+import { Async, Func, NodeWorkerSettings, TaskFuncThis } from './types';
 import { createFunctionString } from './utils';
-import { Async, CommonWorkerSettings, Func, TaskFunc } from './types';
 
 function createScript(fn: Function): string {
   return `
@@ -36,31 +36,33 @@ function createScript(fn: Function): string {
   `;
 }
 
-export interface StaticPoolOptions<TTask, TWorkerData = any> extends CommonWorkerSettings {
+export type StaticPoolOptions<TTask extends Func<TaskFuncThis<TWorkerData>>, TWorkerData = any> = NodeWorkerSettings & {
   /** number of workers */
   size: number;
 
-  /** path of worker file or a worker function */
+  /** path of worker file or worker function */
   task: string | TTask;
 
   /** data to pass into workers */
   workerData?: TWorkerData;
+};
+
+/** Executor for StaticPool. Used to apply some advanced settings to a task. */
+export class StaticTaskExecutor<TTask extends Func> extends TaskExecutor {
+  /** Execute this task with the parameter provided. */
+  exec = ((param: any) => {
+    return super.runTask(param);
+  }) as Async<TTask>;
 }
 
 /**
  * Threads pool with static task.
  */
 export class StaticPool<TTask extends Func, TWorkerData = any> extends Pool {
-  /**
-   * Choose a idle worker to run the task
-   * with param provided.
-   */
-  exec: Async<TTask>;
-
   constructor(opt: StaticPoolOptions<TTask, TWorkerData>) {
-    const { size, task, workerData, shareEnv, resourceLimits } = opt;
+    super(opt.size);
 
-    super(size);
+    const { task, workerData, shareEnv, resourceLimits } = opt;
 
     const workerOpt: Record<string, any> = { workerData };
 
@@ -99,6 +101,17 @@ export class StaticPool<TTask extends Func, TWorkerData = any> extends Pool {
       return this.runTask(param, { timeout: 0 });
     }) as Async<TTask>;
   }
+
+  /**
+   * Choose a idle worker to run the task
+   * with param provided.
+   */
+  exec: Async<TTask> = ((param: unknown) => {
+    if (typeof param === 'function') {
+      throw new TypeError('"param" can not be a function!');
+    }
+    return this.runTask(param, { timeout: 0 });
+  }) as Async<TTask>;
 
   /**
    * Create a task executor of this pool.

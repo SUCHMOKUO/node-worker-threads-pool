@@ -1,4 +1,4 @@
-const { DynamicPool, StaticPool } = require('../dist');
+const { DynamicPool, StaticPool } = require('..');
 const assert = require('assert');
 
 function expect(val) {
@@ -6,7 +6,7 @@ function expect(val) {
     val,
     toBe(val) {
       assert.strictEqual(val, this.val);
-    },
+    }
   };
 }
 
@@ -20,7 +20,7 @@ const tests = [
       task() {
         process.env.A = Math.random().toString();
         return process.env.A;
-      },
+      }
     });
 
     expect(env.A).toBe(undefined);
@@ -37,7 +37,7 @@ const tests = [
       task() {
         process.env.A = Math.random().toString();
         return process.env.A;
-      },
+      }
     });
     expect(env.A).toBe(undefined);
     pool.destroy();
@@ -50,7 +50,7 @@ const tests = [
       task() {
         process.env.A = Math.random().toString();
         return process.env.A;
-      },
+      }
     });
 
     expect(env.A).toBe(undefined);
@@ -68,12 +68,12 @@ const tests = [
       task() {
         process.env.A = Math.random().toString();
         return process.env.A;
-      },
+      }
     });
     expect(env.A).toBe(val);
     pool.destroy();
     delete env.A;
-  },
+  }
 ];
 
 async function runTests() {

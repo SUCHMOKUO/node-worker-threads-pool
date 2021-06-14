@@ -30,15 +30,15 @@ npm install node-worker-threads-pool --save
 Quickly create a pool with static task:
 
 ```js
-const { StaticPool } = require("node-worker-threads-pool");
+const { StaticPool } = require('node-worker-threads-pool');
 
 const staticPool = new StaticPool({
   size: 4,
-  task: (n) => n + 1,
+  task: (n) => n + 1
 });
 
 staticPool.exec(1).then((result) => {
-  console.log("result from thread pool:", result); // result will be 2.
+  console.log('result from thread pool:', result); // result will be 2.
 });
 ```
 
@@ -47,14 +47,14 @@ There you go! 🎉
 Create a pool with dynamic task:
 
 ```js
-const { DynamicPool } = require("node-worker-threads-pool");
+const { DynamicPool } = require('node-worker-threads-pool');
 
 const dynamicPool = new DynamicPool(4);
 
 dynamicPool
   .exec({
     task: (n) => n + 1,
-    param: 1,
+    param: 1
   })
   .then((result) => {
     console.log(result); // result will be 2.
@@ -63,7 +63,7 @@ dynamicPool
 dynamicPool
   .exec({
     task: (n) => n + 2,
-    param: 1,
+    param: 1
   })
   .then((result) => {
     console.log(result); // result will be 3.
@@ -93,7 +93,7 @@ Instance of StaticPool is a threads pool with static task provided.
 
 ```js
 // Access the workerData by requiring it.
-const { parentPort, workerData } = require("worker_threads");
+const { parentPort, workerData } = require('worker_threads');
 
 // Something you shouldn"t run in main thread
 // since it will block.
@@ -106,14 +106,14 @@ function fib(n) {
 
 // Main thread will pass the data you need
 // through this event listener.
-parentPort.on("message", (param) => {
-  if (typeof param !== "number") {
-    throw new Error("param must be a number.");
+parentPort.on('message', (param) => {
+  if (typeof param !== 'number') {
+    throw new Error('param must be a number.');
   }
   const result = fib(param);
 
   // Access the workerData.
-  console.log("workerData is", workerData);
+  console.log('workerData is', workerData);
 
   // return the result to main thread.
   parentPort.postMessage(result);
@@ -123,14 +123,14 @@ parentPort.on("message", (param) => {
 ### In the main.js :
 
 ```js
-const { StaticPool } = require("node-worker-threads-pool");
+const { StaticPool } = require('node-worker-threads-pool');
 
-const filePath = "absolute/path/to/your/worker/script";
+const filePath = 'absolute/path/to/your/worker/script';
 
 const pool = new StaticPool({
   size: 4,
   task: filePath,
-  workerData: "workerData!",
+  workerData: 'workerData!'
 });
 
 for (let i = 0; i < 20; i++) {
@@ -154,19 +154,18 @@ You can access workerData in task function using `this` keyword:
 ```js
 const pool = new StaticPool({
   size: 4,
-  workerData: "workerData!",
+  workerData: 'workerData!',
   task() {
     console.log(this.workerData);
-  },
+  }
 });
 ```
 
 **⚠️Remember not to use arrow function as a task function when you use `this.workerData`, because arrow function don't have `this` binding.**
 
-### `staticPool.exec(param[, timeout])`
+### `staticPool.exec(param)`
 
 - `param` `<any>` The param your worker script or task function need.
-- `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 
 The simplest way to execute a task without considering other configurations. This will choose an idle worker in the pool to execute your heavy task with the param you provided. The Promise is resolved with the result.
@@ -192,7 +191,7 @@ const staticPool = new StaticPool({
   size: 4,
   task: (buf) => {
     // do something with buf.
-  },
+  }
 });
 
 const buf = Buffer.alloc(1024 * 1024);
@@ -202,7 +201,7 @@ staticPool
   .setTimeout(1000) // set timeout for task.
   .setTransferList([buf.buffer]) // set transferList.
   .exec(buf) // execute!
-  .then(() => console.log("done!"));
+  .then(() => console.log('done!'));
 ```
 
 ### `staticTaskExecutor.setTimeout(t)`
@@ -241,8 +240,6 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 
 - `opt`
   - `task` `<function>` Function as a task to do. **⚠️Notice: You can not use closure in task function!**
-  - ~~`workerData` `<any>` [cloneable data] you want to access in task function.~~ (deprecated since 1.4.0, use `param` instead)
-  - `param` `<any>` [cloneable data] you want to pass into task function as parameter.
   - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 
@@ -277,7 +274,7 @@ dynamicPool
   .setTimeout(1000) // set timeout for task.
   .setTransferList([buf.buffer]) // set transferList.
   .exec(buf) // execute!
-  .then(() => console.log("done!"));
+  .then(() => console.log('done!'));
 ```
 
 ### `dynamicTaskExecutor.setTimeout(t)`
@@ -356,9 +353,9 @@ If you are using webpack in your project and want to import third-party librarie
 const staticPool = new StaticPool({
   size: 4,
   task() {
-    const lib = this.require("lib");
+    const lib = this.require('lib');
     // ...
-  },
+  }
 });
 ```
 
@@ -368,9 +365,9 @@ const dynamicPool = new DynamicPool(4);
 dynamicPool
   .exec({
     task() {
-      const lib = this.require("lib");
+      const lib = this.require('lib');
       // ...
-    },
+    }
   })
   .then((result) => {
     // ...

@@ -1,17 +1,11 @@
 import { SHARE_ENV } from 'worker_threads';
 import { Pool } from './pool';
 import { PoolWorker } from './poolWorker';
-import { DynamicTaskExecutor } from './taskExecutor';
+import { TaskExecutor } from './taskExecutor';
+import { Async, Func, NodeWorkerSettings, TaskFuncThis } from './types';
 import { createFunctionString } from './utils';
-import { CommonWorkerSettings, TaskFunc } from './types';
 
-export interface DynamicPoolExecOptions<TParam, TResult, TWorkerData = any> {
-  /** Function to be executed. */
-  task: TaskFunc<TParam, TResult>;
-
-  /** Parameter for task function. */
-  param?: TParam;
-
+export type DynamicPoolExecOptions<TTask extends Func<TaskFuncThis<TWorkerData>>, TWorkerData = any> = {
   /**
    * Data to pass into workers.
    * @deprecated since version 1.4.0. Please use parameter instead.
@@ -19,7 +13,19 @@ export interface DynamicPoolExecOptions<TParam, TResult, TWorkerData = any> {
   workerData?: TWorkerData;
 
   timeout?: number;
-}
+} & (
+  | {
+      /** Function to be executed. */
+      task: () => ReturnType<TTask>;
+    }
+  | {
+      /** Function to be executed. */
+      task: TTask;
+
+      /** Parameter for task function. */
+      param: Parameters<TTask>[0];
+    }
+);
 
 const script = `
   const vm = require('vm');
@@ -48,6 +54,23 @@ const script = `
   });
 `;
 
+/** Executor for DynamicPool. Used to apply some advanced settings to a task. */
+export class DynamicTaskExecutor<TTask extends Func> extends TaskExecutor {
+  private code: string;
+
+  constructor(dynamicPool: DynamicPool, task: Function) {
+    super(dynamicPool);
+
+    this.code = createFunctionString(task);
+  }
+
+  /** Execute this task with the parameter provided. */
+  exec = ((param: any) => {
+    const workerParam = { code: this.code, param };
+    return super.runTask(workerParam);
+  }) as Async<TTask>;
+}
+
 /**
  * Threads pool that can run different function
  * each call.
@@ -58,12 +81,12 @@ export class DynamicPool extends Pool {
     size: number,
 
     /** Some advanced settings. */
-    opt?: CommonWorkerSettings
+    opt?: NodeWorkerSettings
   ) {
     super(size);
 
     const workerOpt: Record<string, any> = {
-      eval: true,
+      eval: true
     };
 
     if (opt?.shareEnv) {
@@ -81,9 +104,10 @@ export class DynamicPool extends Pool {
    * Choose a idle worker to execute the function
    * with context provided.
    */
-  async exec<TParam, TResult, TWorkerData>(
-    opt: DynamicPoolExecOptions<TParam, TResult, TWorkerData>
-  ): Promise<TResult> {
+  exec<TTask extends Func, TWorkerData = any>(
+    opt: DynamicPoolExecOptions<TTask, TWorkerData>
+  ): ReturnType<Async<TTask>> {
+    //@ts-ignore
     const { task, workerData, timeout, param } = opt;
 
     if (typeof task !== 'function') {
@@ -94,17 +118,17 @@ export class DynamicPool extends Pool {
     const workerParam = {
       code,
       param,
-      workerData,
+      workerData
     };
 
-    return this.runTask(workerParam, { timeout });
+    return this.runTask(workerParam, { timeout }) as ReturnType<TTask>;
   }
 
   /**
    * Create a task executor of this pool.
    * This is used to apply some advanced settings to a task.
    */
-  createExecutor<TParam, TResult>(task: TaskFunc<TParam, TResult>): DynamicTaskExecutor<TParam, TResult> {
+  createExecutor<TTask extends Func>(task: TTask): DynamicTaskExecutor<TTask> {
     return new DynamicTaskExecutor(this, task);
   }
 }

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
-import { TaskConfig, TaskContainer } from './taskContainer';
-import { isTimeoutError } from './promiseWithTimer';
 import { PoolWorker } from './poolWorker';
+import { isTimeoutError } from './promiseWithTimer';
+import { TaskConfig, TaskContainer } from './taskContainer';
 
 export class Pool extends EventEmitter {
   private size: number;

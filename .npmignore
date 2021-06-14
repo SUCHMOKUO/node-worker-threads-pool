@@ -1,4 +1,4 @@
-test/
+__test__/
 .*
 package-lock.json
 coverage/

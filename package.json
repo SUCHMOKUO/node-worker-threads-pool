@@ -1,6 +1,6 @@
 {
   "name": "node-worker-threads-pool",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Simple worker threads pool using Node's worker_threads module. Compatible with ES6+ Promise, Async/Await.",
   "main": "dist/index.js",
   "files": [
@@ -41,6 +41,7 @@
     "husky": "^6.0.0",
     "jest": "^27.0.4",
     "prettier": "^2.3.1",
+    "prettier-plugin-organize-imports": "^2.1.0",
     "pretty-quick": "^3.1.0",
     "ts-jest": "^27.0.3",
     "typescript": "^4.3.2"

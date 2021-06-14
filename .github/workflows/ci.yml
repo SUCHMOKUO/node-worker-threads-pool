@@ -16,18 +16,19 @@ jobs:
 
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "14"
+          node-version: '14'
 
       - name: Test
         run: |
-          npm install
-          npm test
+          yarn
+          yarn test
 
       - name: Coveralls
         if: github.event_name == 'push'
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info
 
   npm-publish:
     if: github.event_name == 'push'
@@ -38,7 +39,12 @@ jobs:
 
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "14"
+          node-version: '14'
+
+      - name: Build
+        run: |
+          yarn
+          yarn build
 
       - uses: JS-DevTools/npm-publish@v1
         with:

@@ -93,13 +93,6 @@ export class StaticPool<TTask extends Func, TWorkerData = any> extends Pool {
       default:
         throw new TypeError('Invalid type of "task"!');
     }
-
-    this.exec = ((param: unknown) => {
-      if (typeof param === 'function') {
-        throw new TypeError('"param" can not be a function!');
-      }
-      return this.runTask(param, { timeout: 0 });
-    }) as Async<TTask>;
   }
 
   /**

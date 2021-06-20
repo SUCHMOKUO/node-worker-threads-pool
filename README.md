@@ -82,7 +82,7 @@ Instance of StaticPool is a threads pool with static task provided.
 
 - `opt` `<Object>`
   - `size` `<number>` Number of workers in this pool.
-  - `task` `<string | function>` Static task to do. It can be a absolute path of worker file ([usage here](#example-with-worker-file)) or a function. **⚠️Notice: If task is a function, you can not use closure in it! If you do want to use external data in the function, use workerData to pass some [cloneable data].**
+  - `task` `<string | function>` Static task to do. It can be a absolute path of worker file ([usage here](#example-with-worker-file)) or a function. **⚠️Notice: If task is a function, you can NOT access variables defined outside the task function! If you do want to use external data, use workerData to pass some [cloneable data].**
   - `workerData` `<any>` [Cloneable data][cloneable data] you want to access in task function. ([usage here](#access-workerdata-in-task-function))
   - `shareEnv` `<boolean>` Set `true` to enable [SHARE_ENV] for all threads in pool.
   - `resourceLimits` `<Object>` Set [resourceLimits] for all threads in pool.
@@ -239,7 +239,7 @@ Instance of DynamicPool is a threads pool executes different task functions prov
 ### `dynamicPool.exec(opt)`
 
 - `opt`
-  - `task` `<function>` Function as a task to do. **⚠️Notice: You can not use closure in task function!**
+  - `task` `<function>` Function as a task to do. **⚠️Notice: You can NOT access variables defined outside the task function!**
   - `timeout` `<number>` Timeout in milisecond for limiting the execution time. When timeout, the function will throw a `TimeoutError`, use `isTimeoutError` function to detect it.
 - Returns: `<Promise>`
 

@@ -3,21 +3,13 @@ import { Pool } from './pool';
 import { PoolWorker } from './poolWorker';
 import { TaskExecutor } from './taskExecutor';
 import { Async, Func, NodeWorkerSettings, TaskFuncThis } from './types';
-import { createFunctionString } from './utils';
+import { createFunctionString, WORKER_RUNTIME_HELPER_CODE } from './utils';
 
 function createScript(fn: Function): string {
   return `
     const { parentPort, workerData } = require('worker_threads');
 
-    function __awaiter(thisArg, _arguments, P, generator) {
-      function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-      return new (P || (P = Promise))(function (resolve, reject) {
-          function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-          function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-          function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-          step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-    }
+    ${WORKER_RUNTIME_HELPER_CODE}
 
     this.workerData = workerData;
     const container = {

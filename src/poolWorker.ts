@@ -3,24 +3,27 @@ import { PromiseWithTimer } from './promiseWithTimer';
 import { TaskConfig } from './taskContainer';
 
 export class PoolWorker extends Worker {
-  public ready = false;
+  private _ready = false;
 
   constructor(...args: ConstructorParameters<typeof Worker>) {
     super(...args);
 
-    this.once('online', () => this.readyToWork());
+    this.once('online', () => this.setReadyToWork());
+  }
+
+  get ready(): boolean {
+    return this._ready;
   }
 
   async run(param: any, taskConfig: TaskConfig): Promise<any> {
-    this.ready = false;
+    this._ready = false;
 
-    const timeout = taskConfig.timeout ? taskConfig.timeout : 0;
-    const transferList = taskConfig.transferList;
+    const { timeout = 0, transferList } = taskConfig;
 
     const taskPromise = new Promise((resolve, reject) => {
       const onMessage = (res: any) => {
         this.removeListener('error', onError);
-        this.readyToWork();
+        this.setReadyToWork();
         resolve(res);
       };
 
@@ -37,8 +40,8 @@ export class PoolWorker extends Worker {
     return new PromiseWithTimer(taskPromise, timeout).startRace();
   }
 
-  private readyToWork(): void {
-    this.ready = true;
+  private setReadyToWork(): void {
+    this._ready = true;
     this.emit('ready', this);
   }
 

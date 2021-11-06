@@ -26,10 +26,10 @@ export class Pool extends EventEmitter {
     }
 
     this.size = size;
-    this.addEventHandlers();
+    this.addSelfEventHandlers();
   }
 
-  private addEventHandlers(): void {
+  private addSelfEventHandlers(): void {
     this.on('worker-ready', (worker) => {
       this.processTask(worker);
     });
@@ -46,9 +46,9 @@ export class Pool extends EventEmitter {
     });
   }
 
-  private setWorkerCreator(getWorker: () => PoolWorker): void {
+  private setWorkerFactory(createWorker: () => PoolWorker): void {
     this.createWorker = () => {
-      const worker = getWorker();
+      const worker = createWorker();
       this.addWorkerLifecycleHandlers(worker);
       return worker;
     };
@@ -62,7 +62,7 @@ export class Pool extends EventEmitter {
   private getIdleWorker(): PoolWorker | null {
     const worker = this.workers.find((worker) => worker.ready);
 
-    return worker ? worker : null;
+    return worker ?? null;
   }
 
   private processTask(worker: PoolWorker): void {
@@ -86,7 +86,7 @@ export class Pool extends EventEmitter {
   }
 
   protected fill(getWorker: () => PoolWorker): void {
-    this.setWorkerCreator(getWorker);
+    this.setWorkerFactory(getWorker);
 
     const size = this.size;
 

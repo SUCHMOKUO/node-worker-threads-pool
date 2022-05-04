@@ -25,7 +25,7 @@ export class PoolWorker extends Worker {
       const onMessage = (res: any) => {
         this.removeListener('error', onError);
         if (this._taskPromiseWithTimer) {
-          this._taskPromiseWithTimer.cleanTimer();
+          this._taskPromiseWithTimer.clearTimer();
         }
         this.setReadyToWork();
         resolve(res);
@@ -34,7 +34,7 @@ export class PoolWorker extends Worker {
       const onError = (err: any) => {
         this.removeListener('message', onMessage);
         if (this._taskPromiseWithTimer) {
-          this._taskPromiseWithTimer.cleanTimer();
+          this._taskPromiseWithTimer.clearTimer();
         }
         reject(err);
       };
@@ -59,7 +59,7 @@ export class PoolWorker extends Worker {
       });
     });
     if (this._taskPromiseWithTimer) {
-      this._taskPromiseWithTimer.cleanTimer();
+      this._taskPromiseWithTimer.clearTimer();
     }
     return super.terminate();
   }

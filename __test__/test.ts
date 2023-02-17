@@ -34,7 +34,7 @@ describe('pool tests', () => {
     pool.destroy();
     try {
       await pool.runTask(null, {});
-    } catch (err) {
+    } catch (err: any) {
       expect(err.message).toBe('This pool is deprecated! Please use a new one.');
     }
   });
@@ -314,7 +314,7 @@ describe('error tests', () => {
     for (let i = 0; i < TASK_NUM; i++) {
       try {
         await pool.exec(-1);
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).toBe('err');
       }
     }
@@ -342,7 +342,7 @@ describe('error tests', () => {
           },
           workerData: -1
         });
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).toBe('err');
       }
     }
@@ -384,7 +384,7 @@ describe('timeout tests', () => {
     try {
       await pool.createExecutor().setTimeout(1000).exec();
     } catch (err) {
-      expect(isTimeoutError(err)).toBe(true);
+      expect(isTimeoutError(err as Error)).toBe(true);
     }
 
     pool.destroy();
@@ -419,8 +419,8 @@ describe('timeout tests', () => {
 
     try {
       await pool.createExecutor().setTimeout(1).exec();
-    } catch (error) {
-      if (isTimeoutError(error)) {
+    } catch (error: any) {
+      if (isTimeoutError(error as Error)) {
         timeoutError = error;
         const result = await pool.exec();
         expect(result).toBe(0);
@@ -443,7 +443,7 @@ describe('timeout tests', () => {
         },
         timeout: 1000
       });
-    } catch (err) {
+    } catch (err: any) {
       expect(isTimeoutError(err)).toBe(true);
     }
 
@@ -562,7 +562,7 @@ describe('task executor tests', () => {
 
     try {
       await pool.createExecutor().setTimeout(500).exec();
-    } catch (error) {
+    } catch (error: any) {
       expect(isTimeoutError(error)).toBe(true);
     } finally {
       pool.destroy();
@@ -608,7 +608,7 @@ describe('task executor tests', () => {
         })
         .setTimeout(500)
         .exec();
-    } catch (error) {
+    } catch (error: any) {
       expect(isTimeoutError(error)).toBe(true);
     } finally {
       pool.destroy();
@@ -704,6 +704,20 @@ describe('require function tests', () => {
 
     expect(cpus).toBeGreaterThan(0);
 
+    pool.destroy();
+  });
+
+  it('should return all workers', async () => {
+    let poolSize = 3;
+    const pool = new StaticPool({
+      size: poolSize,
+      task: async function (n) {
+        return n;
+      }
+    });
+
+    const workers = pool.allWorkers();
+    expect(workers.length).toBe(poolSize);
     pool.destroy();
   });
 });

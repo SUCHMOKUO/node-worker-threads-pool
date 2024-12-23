@@ -126,4 +126,8 @@ export class Pool extends EventEmitter {
     this.workers = [];
     await Promise.all(workers.map((worker) => worker.terminate()));
   }
+
+  allWorkers(): PoolWorker[] {
+    return this.workers;
+  }
 }

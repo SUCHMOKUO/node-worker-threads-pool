@@ -4,6 +4,7 @@ import { TaskConfig } from './taskContainer';
 
 export class PoolWorker extends Worker {
   private _ready = false;
+  private _taskPromiseWithTimer: PromiseWithTimer | undefined = undefined;
 
   constructor(...args: ConstructorParameters<typeof Worker>) {
     super(...args);
@@ -23,12 +24,18 @@ export class PoolWorker extends Worker {
     const taskPromise = new Promise((resolve, reject) => {
       const onMessage = (res: any) => {
         this.removeListener('error', onError);
+        if (this._taskPromiseWithTimer) {
+          this._taskPromiseWithTimer.clearTimer();
+        }
         this.setReadyToWork();
         resolve(res);
       };
 
       const onError = (err: any) => {
         this.removeListener('message', onMessage);
+        if (this._taskPromiseWithTimer) {
+          this._taskPromiseWithTimer.clearTimer();
+        }
         reject(err);
       };
 
@@ -36,8 +43,8 @@ export class PoolWorker extends Worker {
       this.once('error', onError);
       this.postMessage(param, transferList);
     });
-
-    return new PromiseWithTimer(taskPromise, timeout).startRace();
+    this._taskPromiseWithTimer = new PromiseWithTimer(taskPromise, timeout);
+    return this._taskPromiseWithTimer.startRace();
   }
 
   private setReadyToWork(): void {
@@ -51,7 +58,9 @@ export class PoolWorker extends Worker {
         this.removeAllListeners();
       });
     });
-
+    if (this._taskPromiseWithTimer) {
+      this._taskPromiseWithTimer.clearTimer();
+    }
     return super.terminate();
   }
 }

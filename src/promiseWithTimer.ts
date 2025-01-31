@@ -40,4 +40,10 @@ export class PromiseWithTimer<T = any> {
     clearTimeout(this.timerId);
     return result as T;
   }
+
+  async clearTimer() {
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+    }
+  }
 }
